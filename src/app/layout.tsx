@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
-import { Fraunces, Figtree } from "next/font/google";
+import { Figtree } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { site } from "@/lib/site";
 import "./globals.css";
 
-// Display serif — warm, characterful, made for a handmade brand.
-const fraunces = Fraunces({
+// Display serif — self-hosted Zvon Serif (variable), the brand's headline face.
+const zvon = localFont({
+  src: "./fonts/ZvonSerifGX.ttf",
   variable: "--font-display",
-  subsets: ["latin"],
-  axes: ["SOFT", "WONK"],
+  weight: "400 900",
+  display: "swap",
 });
 
 // Body — quiet, humanist, highly legible.
@@ -59,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${figtree.variable} h-full antialiased`}
+      className={`${zvon.variable} ${figtree.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}
