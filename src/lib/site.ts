@@ -47,79 +47,113 @@ export const site = {
   },
 } as const;
 
+// A single commission piece. Photos are square (1:1) as provided.
 export type Piece = {
   id: string;
   title: string;
   description: string;
   /** Display price, e.g. "$68". */
   price: string;
-  /** Which piece type this belongs to (used for the gallery + SEO). */
-  category: "Plates" | "Garden" | "Vessels";
-  /** Optional real photo in /public. When absent, an on-brand placeholder renders. */
+  /** Dimensions, e.g. '14" platter' or '8" × 8"'. */
+  size?: string;
+  /** Optional square photo in /public. When absent, an on-brand placeholder renders. */
   image?: string;
   /** PLACEHOLDER — paste a Stripe Payment Link here later to enable the Buy button. */
   stripeLink?: string;
-  /** One of the placeholder vessel silhouettes: 0–3. */
+  /** One of the placeholder vessel silhouettes: 0–3 (used until a real photo lands). */
   shape: 0 | 1 | 2 | 3;
 };
 
-// PLACEHOLDER pieces — replace titles, prices, photos, and Stripe links with real ones.
-export const pieces: Piece[] = [
+// A themed group of commission pieces, fronted by a horizontal banner image.
+export type Collection = {
+  id: string;
+  name: string;
+  eyebrow: string;
+  tagline: string;
+  /** Horizontal banner image in /public. */
+  image: string;
+  pieces: Piece[];
+};
+
+// PLACEHOLDER pieces per collection — real titles, sizes, prices, and square
+// photos get filled in next. Set `image` on a piece to replace its placeholder.
+export const collections: Collection[] = [
   {
-    id: "terracotta-dinner-plate",
-    title: "Terracotta Dinner Plate",
-    description: "Wheel-thrown stoneware with a warm matte glaze and raw clay rim.",
-    price: "$68",
-    category: "Plates",
-    shape: 0,
+    id: "wildlife",
+    name: "Wildlife",
+    eyebrow: "Commission collection",
+    tagline:
+      "Birds, fish, and creatures hand-painted in bold, folk-geometric color — " +
+      "statement platters and plates made to be hung as much as used.",
+    image: "/wildlife.png",
+    pieces: [
+      {
+        id: "wildlife-1",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 0,
+      },
+      {
+        id: "wildlife-2",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 1,
+      },
+      {
+        id: "wildlife-3",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 3,
+      },
+    ],
   },
   {
-    id: "speckled-salad-plates",
-    title: "Speckled Salad Plates",
-    description: "A pair of speckled everyday plates, glazed in soft oat.",
-    price: "$95",
-    category: "Plates",
-    shape: 1,
-  },
-  {
-    id: "glazed-garden-planter",
-    title: "Glazed Garden Planter",
-    description: "Frost-tolerant planter finished in a river-green reactive glaze.",
-    price: "$120",
-    category: "Garden",
-    shape: 2,
-  },
-  {
-    id: "stoneware-serving-platter",
-    title: "Stoneware Serving Platter",
-    description: "Generous hand-built platter for the center of the table.",
-    price: "$145",
-    category: "Plates",
-    shape: 3,
-  },
-  {
-    id: "hanging-garden-orb",
-    title: "Hanging Garden Orb",
-    description: "Sculptural hanging vessel for trailing plants and cut stems.",
-    price: "$85",
-    category: "Garden",
-    shape: 1,
-  },
-  {
-    id: "rimmed-ceramic-bowl",
-    title: "Rimmed Ceramic Bowl",
-    description: "Deep bowl with a rolled rim, glazed in ash and ochre.",
-    price: "$54",
-    category: "Vessels",
-    shape: 0,
+    id: "heirloom",
+    name: "Heirloom",
+    eyebrow: "Commission collection",
+    tagline:
+      "Commemorative platters and keepsakes — houses, names, dates, and the small " +
+      "details of a life, drawn in fine line work to be passed down.",
+    image: "/heirloom.png",
+    pieces: [
+      {
+        id: "heirloom-1",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 2,
+      },
+      {
+        id: "heirloom-2",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 0,
+      },
+      {
+        id: "heirloom-3",
+        title: "Piece coming soon",
+        description: "Details for this commission piece are on the way.",
+        price: "—",
+        size: "Square",
+        shape: 1,
+      },
+    ],
   },
 ];
 
 // Options offered in the commission form's "piece type" select.
 export const commissionTypes = [
-  "Plates & tableware",
-  "Garden piece",
-  "Vessel / vase",
+  "Wildlife piece",
+  "Heirloom / commemorative piece",
   "A full set",
   "Something else",
 ] as const;

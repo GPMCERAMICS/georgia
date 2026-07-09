@@ -1,4 +1,8 @@
-import { pieces, site } from "@/lib/site";
+import { collections, site } from "@/lib/site";
+
+const pieces = collections.flatMap((c) =>
+  c.pieces.map((p) => ({ ...p, category: c.name })),
+);
 
 /**
  * Structured data for search engines. LocalBusiness powers local/Maps results;
@@ -23,21 +27,25 @@ export function JsonLd() {
       },
       sameAs: [site.social.instagram, site.social.pinterest].filter(Boolean),
     },
-    ...pieces.map((piece) => ({
-      "@type": "Product",
-      "@id": `${site.url}/#${piece.id}`,
-      name: piece.title,
-      description: piece.description,
-      category: piece.category,
-      brand: { "@type": "Brand", name: site.name },
-      offers: {
-        "@type": "Offer",
-        price: piece.price.replace(/[^0-9.]/g, ""),
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-        url: `${site.url}/#work`,
-      },
-    })),
+    // Only real, priced pieces get Product markup (skip "coming soon" placeholders).
+    ...pieces
+      .map((piece) => ({ piece, amount: piece.price.replace(/[^0-9.]/g, "") }))
+      .filter(({ amount }) => amount.length > 0)
+      .map(({ piece, amount }) => ({
+        "@type": "Product",
+        "@id": `${site.url}/#${piece.id}`,
+        name: piece.title,
+        description: piece.description,
+        category: piece.category,
+        brand: { "@type": "Brand", name: site.name },
+        offers: {
+          "@type": "Offer",
+          price: amount,
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: `${site.url}/#${piece.id.split("-")[0]}`,
+        },
+      })),
   ];
 
   const json = {

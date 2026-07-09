@@ -1,6 +1,6 @@
 import { About } from "@/components/site/about";
+import { Collections } from "@/components/site/collections";
 import { Commission } from "@/components/site/commission";
-import { Gallery } from "@/components/site/gallery";
 import { Hero } from "@/components/site/hero";
 import { JsonLd } from "@/components/site/json-ld";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -13,7 +13,7 @@ export default function Home() {
       <SiteHeader />
       <main>
         <Hero />
-        <Gallery />
+        <Collections />
         <About />
         <Commission />
       </main>

@@ -6,8 +6,8 @@ import { PlaceholderVessel } from "./placeholder-vessel";
 
 export function PieceCard({ piece }: { piece: Piece }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_oklch(0.4_0.08_40/0.45)]">
-      <div className="relative aspect-[4/5] overflow-hidden">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_oklch(0.2_0.05_260/0.4)]">
+      <div className="relative aspect-square overflow-hidden">
         {piece.image ? (
           <Image
             src={piece.image}
@@ -19,13 +19,10 @@ export function PieceCard({ piece }: { piece: Piece }) {
         ) : (
           <PlaceholderVessel
             shape={piece.shape}
-            label={`${piece.title} — ${piece.description}`}
+            label={piece.title}
             className="h-full w-full transition-transform duration-500 group-hover:scale-[1.04]"
           />
         )}
-        <span className="absolute left-3 top-3 rounded-full bg-background/85 px-3 py-1 text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
-          {piece.category}
-        </span>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
@@ -35,6 +32,11 @@ export function PieceCard({ piece }: { piece: Piece }) {
             {piece.price}
           </span>
         </div>
+        {piece.size && (
+          <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+            {piece.size}
+          </p>
+        )}
         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
           {piece.description}
         </p>
