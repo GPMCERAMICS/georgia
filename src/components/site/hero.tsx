@@ -1,7 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { site } from "@/lib/site";
-import { PlaceholderVessel } from "./placeholder-vessel";
 
 export function Hero() {
   return (
@@ -37,13 +37,16 @@ export function Hero() {
 
         {/* Art */}
         <div className="animate-rise [animation-delay:120ms]">
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-sm">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-md">
             <div className="absolute -inset-3 -rotate-2 rounded-[2rem] bg-secondary" />
-            <div className="absolute inset-0 rotate-1 overflow-hidden rounded-[2rem] border border-border shadow-[0_30px_60px_-30px_oklch(0.4_0.08_40/0.5)]">
-              <PlaceholderVessel
-                shape={2}
-                className="h-full w-full"
-                label="A hand-thrown garden planter by Georgia Perkins"
+            <div className="absolute inset-0 overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_30px_60px_-30px_oklch(0.2_0.05_260/0.45)]">
+              <Image
+                src="/hero-owl.png"
+                alt="Watercolor owl framed in a hand-drawn navy geometric ring — signature artwork of Georgia Perkins Pottery"
+                fill
+                priority
+                sizes="(min-width: 768px) 28rem, 100vw"
+                className="object-cover"
               />
             </div>
           </div>
