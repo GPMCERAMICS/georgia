@@ -86,30 +86,57 @@ export const collections: Collection[] = [
       "Birds, fish, and creatures hand-painted in bold, folk-geometric color — " +
       "statement platters and plates made to be hung as much as used.",
     image: "/wildlife.png",
+    // NOTE: titles are descriptive placeholders; sizes + prices pending Georgia.
     pieces: [
       {
-        id: "wildlife-1",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "wildlife-kingfisher",
+        title: "Kingfisher Plate",
+        description:
+          "A sacred kingfisher in blue-and-green watercolor, ringed by the " +
+          "signature navy geometric band.",
+        price: "Inquire",
+        image: "/wildlife-kingfisher.png",
         shape: 0,
       },
       {
-        id: "wildlife-2",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "wildlife-owl",
+        title: "Great Horned Owl Plate",
+        description:
+          "A great horned owl in loose watercolor, set against a sunburst of " +
+          "ochre and gold.",
+        price: "Inquire",
+        image: "/wildlife-owl.png",
         shape: 1,
       },
       {
-        id: "wildlife-3",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "wildlife-snapper",
+        title: "Twin Snapper Plate",
+        description:
+          "A pair of snapper over red gingham and hand-drawn waves — a nod to " +
+          "the day's catch.",
+        price: "Inquire",
+        image: "/wildlife-snapper.png",
+        shape: 2,
+      },
+      {
+        id: "wildlife-sardines",
+        title: "Sardine Fish Platter",
+        description:
+          "A fish-shaped platter with two spotted sardines in sunlit orange " +
+          "and teal.",
+        price: "Inquire",
+        image: "/wildlife-fish-platter.png",
         shape: 3,
+      },
+      {
+        id: "wildlife-pufferfish",
+        title: "Pufferfish Plate",
+        description:
+          "A puffed-up pufferfish adrift in a sea of hand-drawn swirls, in " +
+          "cobalt line work.",
+        price: "Inquire",
+        image: "/wildlife-pufferfish.png",
+        shape: 0,
       },
     ],
   },
@@ -121,30 +148,47 @@ export const collections: Collection[] = [
       "Commemorative platters and keepsakes — houses, names, dates, and the small " +
       "details of a life, drawn in fine line work to be passed down.",
     image: "/heirloom.png",
+    // NOTE: titles are descriptive placeholders; sizes + prices pending Georgia.
     pieces: [
       {
-        id: "heirloom-1",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "heirloom-mendacity",
+        title: "Custom Home Platter",
+        description:
+          "A blue toile portrait of the family home, framed by the pets, " +
+          "pastimes, and wildlife that make it theirs.",
+        price: "Inquire",
+        image: "/heirloom-mendacity.png",
         shape: 2,
       },
       {
-        id: "heirloom-2",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "heirloom-hole-in-one",
+        title: "Hole-in-One Plate",
+        description:
+          "A commemorative plate marking the course, the date, and the shot " +
+          "of a lifetime.",
+        price: "Inquire",
+        image: "/heirloom-hole-in-one.png",
         shape: 0,
       },
       {
-        id: "heirloom-3",
-        title: "Piece coming soon",
-        description: "Details for this commission piece are on the way.",
-        price: "—",
-        size: "Square",
+        id: "heirloom-anniversary",
+        title: "Anniversary Portrait Platter",
+        description:
+          "Hand-drawn vignettes of a life together — portraits, places, and " +
+          "the moments worth keeping.",
+        price: "Inquire",
+        image: "/heirloom-norma-harry.png",
         shape: 1,
+      },
+      {
+        id: "heirloom-wedding",
+        title: "Wedding Commemorative Platter",
+        description:
+          "A monogrammed keepsake of the day, ringed with the couple's " +
+          "story, hobbies, and home.",
+        price: "Inquire",
+        image: "/heirloom-wedding.png",
+        shape: 3,
       },
     ],
   },

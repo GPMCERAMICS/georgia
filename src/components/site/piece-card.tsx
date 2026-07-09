@@ -5,6 +5,7 @@ import type { Piece } from "@/lib/site";
 import { PlaceholderVessel } from "./placeholder-vessel";
 
 export function PieceCard({ piece }: { piece: Piece }) {
+  const hasPrice = /\d/.test(piece.price);
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_oklch(0.2_0.05_260/0.4)]">
       <div className="relative aspect-square overflow-hidden">
@@ -28,9 +29,11 @@ export function PieceCard({ piece }: { piece: Piece }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="font-display text-xl leading-snug">{piece.title}</h3>
-          <span className="shrink-0 font-display text-lg text-primary">
-            {piece.price}
-          </span>
+          {hasPrice && (
+            <span className="shrink-0 font-display text-lg text-primary">
+              {piece.price}
+            </span>
+          )}
         </div>
         {piece.size && (
           <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
