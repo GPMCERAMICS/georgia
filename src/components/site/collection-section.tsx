@@ -24,13 +24,22 @@ export function CollectionSection({ collection }: { collection: Collection }) {
 
         {/* Title + description across the next two columns */}
         <div className="md:col-span-2">
-          <p className="mb-3 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-            <span className="h-px w-8 rule-clay" />
-            {collection.eyebrow}
-          </p>
-          <h2 className="font-display text-4xl leading-none md:text-6xl">
-            {collection.name}
-          </h2>
+          <div className="flex items-end gap-4">
+            <h2 className="font-display text-4xl leading-none md:text-6xl">
+              {collection.name}
+            </h2>
+            {/* Plate-rim triangle rule: fills the line, clipped, aligned to text bottom */}
+            <span
+              aria-hidden
+              className="h-[1.1rem] min-w-0 flex-1 overflow-hidden md:h-[1.9rem]"
+              style={{
+                backgroundImage: "url(/triangle-borders.svg)",
+                backgroundRepeat: "repeat-x",
+                backgroundPosition: "left bottom",
+                backgroundSize: "auto 100%",
+              }}
+            />
+          </div>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
             {collection.tagline}
           </p>

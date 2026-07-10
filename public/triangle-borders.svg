@@ -1,0 +1,43 @@
+<svg width="2405" height="121" viewBox="0 0 2405 121" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_ng_1063_57)">
+<path d="M78.9112 4L153.822 116.5H4L78.9112 4Z" fill="#16223A"/>
+<path d="M228.911 4L303.822 116.5H154L228.911 4Z" fill="#16223A"/>
+<path d="M527.911 4L602.822 116.5H453L527.911 4Z" fill="#16223A"/>
+<path d="M677.911 4L752.822 116.5H603L677.911 4Z" fill="#16223A"/>
+<path d="M827.911 4L902.822 116.5H753L827.911 4Z" fill="#16223A"/>
+<path d="M977.911 4L1052.82 116.5H903L977.911 4Z" fill="#16223A"/>
+<path d="M1127.41 4L1201.89 116.5H1052.93L1127.41 4Z" fill="#16223A"/>
+<path d="M1277.41 4L1351.89 116.5H1202.93L1277.41 4Z" fill="#16223A"/>
+<path d="M1426.91 4L1501.82 116.5H1352L1426.91 4Z" fill="#16223A"/>
+<path d="M1576.91 4L1651.82 116.5H1502L1576.91 4Z" fill="#16223A"/>
+<path d="M1726.91 4L1801.82 116.5H1652L1726.91 4Z" fill="#16223A"/>
+<path d="M1876.91 4L1951.82 116.5H1802L1876.91 4Z" fill="#16223A"/>
+<path d="M2026.41 4L2100.89 116.5H1951.93L2026.41 4Z" fill="#16223A"/>
+<path d="M2175.91 4L2250.82 116.5H2101L2175.91 4Z" fill="#16223A"/>
+<path d="M2325.91 4L2400.82 116.5H2251L2325.91 4Z" fill="#16223A"/>
+<path d="M378.411 4L452.889 116.5H303.933L378.411 4Z" fill="#16223A"/>
+</g>
+<defs>
+<filter id="filter0_ng_1063_57" x="0" y="0" width="2404.82" height="120.5" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.5 0.5" stitchTiles="stitch" numOctaves="3" result="noise" seed="515" />
+<feColorMatrix in="noise" type="luminanceToAlpha" result="alphaNoise" />
+<feComponentTransfer in="alphaNoise" result="coloredNoise1">
+<feFuncA type="discrete" tableValues="0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feFlood flood-color="rgba(0, 0, 0, 0.25)" result="color1Flood" />
+<feComposite operator="in" in2="noise1Clipped" in="color1Flood" result="color1" />
+<feMerge result="effect1_noise_1063_57">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+<feTurbulence type="fractalNoise" baseFrequency="0.03125 0.03125" numOctaves="3" seed="7312" />
+<feDisplacementMap in="effect1_noise_1063_57" scale="8" xChannelSelector="R" yChannelSelector="G" result="displacedImage" width="100%" height="100%" />
+<feMerge result="effect2_texture_1063_57">
+<feMergeNode in="displacedImage"/>
+</feMerge>
+</filter>
+</defs>
+</svg>
