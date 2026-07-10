@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { site } from "@/lib/site";
-import { PlaceholderVessel } from "./placeholder-vessel";
 
 export function About() {
   return (
@@ -8,10 +8,24 @@ export function About() {
         <div className="order-2 md:order-1">
           <div className="grid grid-cols-2 gap-4">
             <div className="mt-8 overflow-hidden rounded-2xl border border-border shadow-sm">
-              <PlaceholderVessel shape={0} className="aspect-[3/4] w-full" />
+              <Image
+                src="/bio-1.png"
+                alt="The hand-painted maker's mark on the back of a Georgia Perkins plate"
+                width={540}
+                height={675}
+                sizes="(min-width: 768px) 16rem, 45vw"
+                className="aspect-[3/4] w-full object-cover"
+              />
             </div>
             <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-              <PlaceholderVessel shape={3} className="aspect-[3/4] w-full" />
+              <Image
+                src="/bio-2.png"
+                alt="A hand-painted plate signed on the reverse, resting on a spiral-decorated dish"
+                width={540}
+                height={675}
+                sizes="(min-width: 768px) 16rem, 45vw"
+                className="aspect-[3/4] w-full object-cover"
+              />
             </div>
           </div>
         </div>
