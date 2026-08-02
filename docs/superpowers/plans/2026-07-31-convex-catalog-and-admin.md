@@ -46,19 +46,16 @@
 npm install convex @convex-dev/auth @auth/core@0.41.3
 ```
 
-- [ ] **Step 2: Provision Convex through the Vercel Marketplace**
+- [ ] **Step 2: (superseded — do not run)**
 
-Convex is available on the marketplace (verified: slug `convex`), which wires the
-env vars into the Vercel project automatically.
+The original plan provisioned Convex via `vercel integration add convex`.
+**Do not.** The Convex project is created by the CLI in Step 3 instead, under
+the Smith & Grain team, named `georgia-perkins-pottery`.
 
-```bash
-vercel link
-vercel integration add convex --yes
-```
-
-If the CLI hands off to a browser or dashboard, **stop and ask the user to
-complete it**, then continue. Note: the installed Vercel CLI is v53; if
-`integration add` misbehaves, ask the user to run `npm i -g vercel@latest` first.
+Running the marketplace integration *as well* mints a SECOND, unrelated Convex
+project and splits the deployment in two. At deploy time, wire the existing
+project into Vercel by setting `CONVEX_DEPLOY_KEY` and `NEXT_PUBLIC_CONVEX_URL`
+as Vercel env vars — do not use the marketplace for this project.
 
 - [ ] **Step 3: Initialise the Convex dev deployment**
 
