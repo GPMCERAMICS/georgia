@@ -40,10 +40,10 @@
 
 - [ ] **Step 1: Install dependencies**
 
-`@auth/core` is pinned because Convex Auth tracks a specific version of it.
+`@auth/core` is pinned to satisfy `@convex-dev/auth`'s peer range `^0.41.1` (verified 2026-08-02 against @convex-dev/auth@0.0.94). Do NOT use --force or --legacy-peer-deps.
 
 ```bash
-npm install convex @convex-dev/auth @auth/core@0.37.0
+npm install convex @convex-dev/auth @auth/core@0.41.3
 ```
 
 - [ ] **Step 2: Provision Convex through the Vercel Marketplace**
