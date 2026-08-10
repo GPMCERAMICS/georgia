@@ -8,13 +8,19 @@
  * @module
  */
 
+import type * as lib_availability from "../lib/availability.js";
+import type * as pieces from "../pieces.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  "lib/availability": typeof lib_availability;
+  pieces: typeof pieces;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
