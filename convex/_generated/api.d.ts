@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as auth from "../auth.js";
+import type * as http from "../http.js";
+import type * as lib_adminGuard from "../lib/adminGuard.js";
 import type * as lib_availability from "../lib/availability.js";
 import type * as pieces from "../pieces.js";
 
@@ -18,6 +21,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  auth: typeof auth;
+  http: typeof http;
+  "lib/adminGuard": typeof lib_adminGuard;
   "lib/availability": typeof lib_availability;
   pieces: typeof pieces;
 }>;
