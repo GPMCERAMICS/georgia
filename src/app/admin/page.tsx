@@ -1,7 +1,5 @@
+import { PiecesTable } from "@/components/admin/pieces-table";
+
 export default function AdminHomePage() {
-  return (
-    <p className="text-sm text-muted-foreground">
-      Pieces list lands in Task 8.
-    </p>
-  );
+  return <PiecesTable />;
 }
