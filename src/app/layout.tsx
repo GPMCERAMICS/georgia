@@ -3,6 +3,7 @@ import { Figtree } from "next/font/google";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { site } from "@/lib/site";
+import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 
 // Display serif — self-hosted Zvon Serif (variable), the brand's headline face.
@@ -64,8 +65,10 @@ export default function RootLayout({
       className={`${zvon.variable} ${figtree.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-        <Toaster />
+        <ConvexClientProvider>
+          {children}
+          <Toaster />
+        </ConvexClientProvider>
       </body>
     </html>
   );

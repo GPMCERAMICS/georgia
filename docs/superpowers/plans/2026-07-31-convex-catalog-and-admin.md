@@ -21,6 +21,33 @@
 - Package manager is **npm** (`package-lock.json` present).
 - Existing code style: double quotes, semicolons, 2-space indent, named exports for components.
 
+### Convex 1.41 API corrections (authoritative — overrides training data)
+
+`convex/_generated/ai/guidelines.md` is the source of truth and `AGENTS.md`
+mandates reading it. These differ from older Convex and from what a model is
+likely to write unprompted:
+
+1. **`ctx.db` takes the table name as the first argument.**
+   `ctx.db.get("pieces", id)`, `ctx.db.patch("pieces", id, patch)`,
+   `ctx.db.replace("pieces", id, doc)`, `ctx.db.delete("pieces", id)`.
+   The single-argument form is wrong.
+2. **Never read the wall clock inside a query.** No `Date.now()` or
+   `new Date()` in any `query` handler — queries do not re-run as time passes,
+   so the result goes stale and query-cache reuse collapses. Pass `now` in as
+   an argument. `Date.now()` remains fine in mutations and actions.
+3. **Never `.collect()` an unbounded query.** Use `.take(n)` with a named
+   limit constant, or paginate. Never `.collect().length` to count.
+4. **Index names must list every field**: an index on `["status","sortOrder"]`
+   is named `by_status_and_sortOrder`, not `by_status_sort`.
+5. **Object validators compose** — `.pick()`, `.omit()`, `.partial()`,
+   `.extend()`, and `.fields` to supply function `args`. Derive variants
+   instead of retyping a field list.
+6. **Test files using `import.meta.glob` need `/// <reference types="vite/client" />`**
+   as their first line. Do NOT add a `compilerOptions.types` allowlist to
+   `tsconfig.json`.
+7. Always include `args` validators on every Convex function, including
+   internal ones.
+
 ---
 
 ### Task 1: Provision Convex and wire the client provider
@@ -40,25 +67,22 @@
 
 - [ ] **Step 1: Install dependencies**
 
-`@auth/core` is pinned because Convex Auth tracks a specific version of it.
+`@auth/core` is pinned to satisfy `@convex-dev/auth`'s peer range `^0.41.1` (verified 2026-08-02 against @convex-dev/auth@0.0.94). Do NOT use --force or --legacy-peer-deps.
 
 ```bash
-npm install convex @convex-dev/auth @auth/core@0.37.0
+npm install convex @convex-dev/auth @auth/core@0.41.3
 ```
 
-- [ ] **Step 2: Provision Convex through the Vercel Marketplace**
+- [ ] **Step 2: (superseded — do not run)**
 
-Convex is available on the marketplace (verified: slug `convex`), which wires the
-env vars into the Vercel project automatically.
+The original plan provisioned Convex via `vercel integration add convex`.
+**Do not.** The Convex project is created by the CLI in Step 3 instead, under
+the Smith & Grain team, named `georgia-perkins-pottery`.
 
-```bash
-vercel link
-vercel integration add convex --yes
-```
-
-If the CLI hands off to a browser or dashboard, **stop and ask the user to
-complete it**, then continue. Note: the installed Vercel CLI is v53; if
-`integration add` misbehaves, ask the user to run `npm i -g vercel@latest` first.
+Running the marketplace integration *as well* mints a SECOND, unrelated Convex
+project and splits the deployment in two. At deploy time, wire the existing
+project into Vercel by setting `CONVEX_DEPLOY_KEY` and `NEXT_PUBLIC_CONVEX_URL`
+as Vercel env vars — do not use the marketplace for this project.
 
 - [ ] **Step 3: Initialise the Convex dev deployment**
 
@@ -182,7 +206,7 @@ git commit -m "feat(convex): provision Convex and wire the client provider"
 
 **Interfaces:**
 - Consumes: nothing
-- Produces: tables `pieces` and `orders`; exported validators `pieceMode`, `pieceStatus`, `pieceCollection`, `shippingTier`, `orderStatus`; indexes `pieces.by_slug`, `pieces.by_status_sort`, `orders.by_piece_status`, `orders.by_stripe_session`.
+- Produces: tables `pieces` and `orders`; exported validators `pieceMode`, `pieceStatus`, `pieceCollection`, `shippingTier`, `orderStatus`; indexes `pieces.by_slug`, `pieces.by_status_and_sortOrder`, `orders.by_pieceId_and_status`, `orders.by_stripeSessionId`.
 
 - [ ] **Step 1: Write the schema**
 
@@ -243,7 +267,7 @@ export default defineSchema({
     sortOrder: v.number(),
   })
     .index("by_slug", ["slug"])
-    .index("by_status_sort", ["status", "sortOrder"]),
+    .index("by_status_and_sortOrder", ["status", "sortOrder"]),
 
   orders: defineTable({
     pieceId: v.id("pieces"),
@@ -259,8 +283,8 @@ export default defineSchema({
     shippingCents: v.number(),
     paidAt: v.union(v.number(), v.null()),
   })
-    .index("by_piece_status", ["pieceId", "status"])
-    .index("by_stripe_session", ["stripeSessionId"]),
+    .index("by_pieceId_and_status", ["pieceId", "status"])
+    .index("by_stripeSessionId", ["stripeSessionId"]),
 });
 ```
 
@@ -510,18 +534,21 @@ git commit -m "feat(convex): derive piece availability from stock, release time,
 **Files:**
 - Create: `convex/pieces.ts`
 - Create: `convex/pieces.test.ts`
+- Create: `src/lib/catalog-time.ts`
 
 **Interfaces:**
 - Consumes: `computeAvailability`, `Availability` from `./lib/availability`; schema from Task 2.
 - Produces:
-  - `api.pieces.listPublished` — query, no args, returns `PublicPiece[]` sorted by `sortOrder` ascending, excluding `hidden` pieces.
-  - `api.pieces.getBySlug` — query, args `{ slug: string }`, returns `PublicPiece | null`.
+  - `api.pieces.listPublished` — query, args `{ now: number }`, returns `PublicPiece[]` sorted by `sortOrder` ascending, excluding `hidden` pieces.
+  - `api.pieces.getBySlug` — query, args `{ slug: string, now: number }`, returns `PublicPiece | null`.
+  - `nowForCatalog(): number` from `src/lib/catalog-time.ts` — `Date.now()` quantised down to the minute. Every caller of the two queries uses it.
   - `type PublicPiece = { _id: Id<"pieces">; title: string; slug: string; description: string; size: string | null; collection: "wildlife" | "heirloom"; mode: "oneoff" | "madeToOrder" | "deposit" | "drop"; priceCents: number; leadTimeWeeks: number | null; imageUrls: string[]; availability: Availability }`
 
 - [ ] **Step 1: Write the failing tests**
 
 ```ts
 // convex/pieces.test.ts
+/// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import schema from "./schema";
@@ -529,6 +556,9 @@ import { api } from "./_generated/api";
 
 // convex-test needs to find the function modules in this directory.
 const modules = import.meta.glob("./**/*.ts");
+
+// Time is an argument, never the wall clock — see convex/pieces.ts.
+const NOW = 1_800_000_000_000;
 
 function pieceFields(overrides: Record<string, unknown> = {}) {
   return {
@@ -557,7 +587,7 @@ describe("pieces.listPublished", () => {
       await ctx.db.insert("pieces", pieceFields());
     });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces).toHaveLength(1);
     expect(pieces[0].title).toBe("Kingfisher Plate");
     expect(pieces[0].availability).toEqual({
@@ -576,7 +606,7 @@ describe("pieces.listPublished", () => {
       );
     });
 
-    expect(await t.query(api.pieces.listPublished, {})).toEqual([]);
+    expect(await t.query(api.pieces.listPublished, { now: NOW })).toEqual([]);
   });
 
   test("orders by sortOrder ascending", async () => {
@@ -592,7 +622,7 @@ describe("pieces.listPublished", () => {
       );
     });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces.map((p) => p.title)).toEqual(["First", "Second"]);
   });
 
@@ -611,11 +641,11 @@ describe("pieces.listPublished", () => {
         shippingAddress: null,
         amountCents: 18000,
         shippingCents: 900,
-        paidAt: Date.now(),
+        paidAt: NOW - 1000,
       });
     });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces[0].availability).toEqual({ state: "sold" });
   });
 
@@ -628,7 +658,7 @@ describe("pieces.listPublished", () => {
         stripeSessionId: null,
         stripePaymentIntentId: null,
         status: "pending",
-        expiresAt: Date.now() - 60_000, // expired a minute ago
+        expiresAt: NOW - 60_000, // expired a minute ago
         email: null,
         name: null,
         shippingAddress: null,
@@ -638,7 +668,7 @@ describe("pieces.listPublished", () => {
       });
     });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces[0].availability).toEqual({
       state: "available",
       remaining: 1,
@@ -655,13 +685,14 @@ describe("pieces.getBySlug", () => {
 
     const piece = await t.query(api.pieces.getBySlug, {
       slug: "kingfisher-plate",
+      now: NOW,
     });
     expect(piece?.title).toBe("Kingfisher Plate");
   });
 
   test("returns null for an unknown slug", async () => {
     const t = convexTest(schema, modules);
-    expect(await t.query(api.pieces.getBySlug, { slug: "nope" })).toBeNull();
+    expect(await t.query(api.pieces.getBySlug, { slug: "nope", now: NOW })).toBeNull();
   });
 
   test("returns null for a draft piece", async () => {
@@ -671,7 +702,7 @@ describe("pieces.getBySlug", () => {
     });
 
     expect(
-      await t.query(api.pieces.getBySlug, { slug: "kingfisher-plate" }),
+      await t.query(api.pieces.getBySlug, { slug: "kingfisher-plate", now: NOW }),
     ).toBeNull();
   });
 });
@@ -682,7 +713,26 @@ describe("pieces.getBySlug", () => {
 Run: `npm test -- pieces`
 Expected: FAIL — `api.pieces` does not exist.
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 3: Write the caller-side clock helper**
+
+```ts
+// src/lib/catalog-time.ts
+
+/**
+ * The timestamp to pass to the catalog queries.
+ *
+ * Convex forbids reading the wall clock inside a query, so callers supply it.
+ * Quantising down to the minute means every visitor in the same minute shares
+ * one cache entry instead of each minting their own, and a minute of drift is
+ * irrelevant against a 30-minute hold.
+ */
+export function nowForCatalog(): number {
+  const MINUTE = 60_000;
+  return Math.floor(Date.now() / MINUTE) * MINUTE;
+}
+```
+
+- [ ] **Step 4: Write the query implementation**
 
 ```ts
 // convex/pieces.ts
@@ -707,14 +757,24 @@ export type PublicPiece = {
 };
 
 /**
+ * Convex forbids unbounded `.collect()`. A single piece can never legitimately
+ * accumulate more claims than a generous batch, so we bound the read and treat
+ * exceeding it as sold out rather than silently undercounting.
+ */
+const MAX_CLAIMS_PER_PIECE = 256;
+
+/** Pieces shown on the shop at once. Georgia's catalog is nowhere near this. */
+const MAX_PUBLISHED_PIECES = 200;
+
+/**
  * Counts the orders that consume stock: settled sales, plus checkouts that are
  * still live. An expired pending order holds nothing.
  */
 async function countClaims(ctx: QueryCtx, pieceId: Id<"pieces">, now: number) {
   const orders = await ctx.db
     .query("orders")
-    .withIndex("by_piece_status", (q) => q.eq("pieceId", pieceId))
-    .collect();
+    .withIndex("by_pieceId_and_status", (q) => q.eq("pieceId", pieceId))
+    .take(MAX_CLAIMS_PER_PIECE);
 
   let paidCount = 0;
   let activeHoldCount = 0;
@@ -760,22 +820,35 @@ async function toPublicPiece(
   };
 }
 
+/**
+ * `now` is an argument, never `Date.now()`.
+ *
+ * Convex queries do not re-run as the clock advances, so a query that read the
+ * wall clock would serve a stale "available" long after a hold expired, and
+ * every read would miss the query cache. The caller passes the time, quantised
+ * to the minute (see `nowForCatalog`), which keeps cache reuse high while
+ * staying well inside the 30-minute hold window.
+ *
+ * This makes displayed availability advisory. That is correct: the authoritative
+ * check happens in the reserve mutation (Plan 2), where `Date.now()` is allowed.
+ */
 export const listPublished = query({
-  args: {},
-  handler: async (ctx) => {
-    const now = Date.now();
+  args: { now: v.number() },
+  handler: async (ctx, args) => {
     const pieces = await ctx.db
       .query("pieces")
-      .withIndex("by_status_sort", (q) => q.eq("status", "published"))
+      .withIndex("by_status_and_sortOrder", (q) => q.eq("status", "published"))
       .order("asc")
-      .collect();
+      .take(MAX_PUBLISHED_PIECES);
 
-    return Promise.all(pieces.map((piece) => toPublicPiece(ctx, piece, now)));
+    return Promise.all(
+      pieces.map((piece) => toPublicPiece(ctx, piece, args.now)),
+    );
   },
 });
 
 export const getBySlug = query({
-  args: { slug: v.string() },
+  args: { slug: v.string(), now: v.number() },
   handler: async (ctx, args) => {
     const piece = await ctx.db
       .query("pieces")
@@ -783,25 +856,25 @@ export const getBySlug = query({
       .unique();
 
     if (piece === null || piece.status !== "published") return null;
-    return toPublicPiece(ctx, piece, Date.now());
+    return toPublicPiece(ctx, piece, args.now);
   },
 });
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [ ] **Step 5: Run the tests to verify they pass**
 
 Run: `npm test -- pieces`
 Expected: PASS, 8 tests.
 
-- [ ] **Step 5: Run the whole suite**
+- [ ] **Step 6: Run the whole suite**
 
 Run: `npm test`
-Expected: PASS, 20 tests total.
+Expected: PASS, 21 tests total.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add convex/pieces.ts convex/pieces.test.ts
+git add convex/pieces.ts convex/pieces.test.ts src/lib/catalog-time.ts
 git commit -m "feat(convex): public catalog queries with derived availability"
 ```
 
@@ -928,7 +1001,7 @@ export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<void> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) throw new Error("Not authorised");
 
-  const user = await ctx.db.get(userId);
+  const user = await ctx.db.get("users", userId);
   const adminEmail = process.env.ADMIN_EMAIL;
 
   if (!adminEmail) {
@@ -1086,6 +1159,7 @@ git commit -m "feat(admin): magic-link auth restricted to the admin email"
 
 ```ts
 // convex/admin/pieces.test.ts
+/// <reference types="vite/client" />
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import schema from "../schema";
@@ -1124,7 +1198,7 @@ describe("admin.pieces.create", () => {
     const admin = await asAdmin(t);
 
     const id = await admin.mutation(api.admin.pieces.create, newPieceArgs);
-    const piece = await t.run(async (ctx) => ctx.db.get(id));
+    const piece = await t.run(async (ctx) => ctx.db.get("pieces", id));
 
     expect(piece?.status).toBe("draft");
     expect(piece?.images).toEqual([]);
@@ -1186,7 +1260,7 @@ describe("admin.pieces.setStatus", () => {
       status: "published",
     });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces).toHaveLength(1);
   });
 });
@@ -1204,7 +1278,7 @@ describe("admin.pieces.markSold", () => {
     });
     await admin.mutation(api.admin.pieces.markSold, { id });
 
-    const pieces = await t.query(api.pieces.listPublished, {});
+    const pieces = await t.query(api.pieces.listPublished, { now: NOW });
     expect(pieces[0].availability).toEqual({ state: "sold" });
   });
 });
@@ -1252,6 +1326,9 @@ import {
   shippingTier,
 } from "../schema";
 
+/** Convex forbids unbounded .collect(); the catalog is far below this. */
+const MAX_PIECES = 500;
+
 const editableFields = {
   title: v.string(),
   slug: v.string(),
@@ -1285,7 +1362,10 @@ export const list = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    const pieces = await ctx.db.query("pieces").collect();
+    const pieces = await ctx.db
+      .query("pieces")
+      .withIndex("by_status_and_sortOrder")
+      .take(MAX_PIECES);
     return pieces.sort((a, b) => a.sortOrder - b.sortOrder);
   },
 });
@@ -1296,7 +1376,7 @@ export const create = mutation({
     await requireAdmin(ctx);
     await assertSlugFree(ctx, args.slug);
 
-    const existing = await ctx.db.query("pieces").collect();
+    const existing = await ctx.db.query("pieces").take(MAX_PIECES);
     const sortOrder =
       existing.length === 0
         ? 0
@@ -1312,25 +1392,17 @@ export const create = mutation({
 });
 
 export const update = mutation({
+  // Derived from editableFields rather than retyped — Convex object validators
+  // compose, and a hand-copied list drifts the moment a field is added.
   args: {
     id: v.id("pieces"),
-    title: v.optional(v.string()),
-    slug: v.optional(v.string()),
-    description: v.optional(v.string()),
-    size: v.optional(v.union(v.string(), v.null())),
-    collection: v.optional(pieceCollection),
-    mode: v.optional(pieceMode),
-    priceCents: v.optional(v.number()),
-    stock: v.optional(v.union(v.number(), v.null())),
-    releaseAt: v.optional(v.union(v.number(), v.null())),
-    leadTimeWeeks: v.optional(v.union(v.number(), v.null())),
-    shippingTier: v.optional(shippingTier),
+    ...v.object(editableFields).partial().fields,
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
     const { id, ...patch } = args;
     if (patch.slug !== undefined) await assertSlugFree(ctx, patch.slug, id);
-    await ctx.db.patch(id, patch);
+    await ctx.db.patch("pieces", id, patch);
     return null;
   },
 });
@@ -1339,7 +1411,7 @@ export const setStatus = mutation({
   args: { id: v.id("pieces"), status: pieceStatus },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    await ctx.db.patch(args.id, { status: args.status });
+    await ctx.db.patch("pieces", args.id, { status: args.status });
     return null;
   },
 });
@@ -1352,7 +1424,7 @@ export const markSold = mutation({
   args: { id: v.id("pieces") },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    await ctx.db.patch(args.id, { stock: 0 });
+    await ctx.db.patch("pieces", args.id, { stock: 0 });
     return null;
   },
 });
@@ -1363,7 +1435,7 @@ export const reorder = mutation({
     await requireAdmin(ctx);
     await Promise.all(
       args.orderedIds.map((id, index) =>
-        ctx.db.patch(id, { sortOrder: index }),
+        ctx.db.patch("pieces", id, { sortOrder: index }),
       ),
     );
     return null;
@@ -1424,9 +1496,9 @@ export const attachImage = mutation({
   args: { pieceId: v.id("pieces"), storageId: v.id("_storage") },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const piece = await ctx.db.get(args.pieceId);
+    const piece = await ctx.db.get("pieces", args.pieceId);
     if (!piece) throw new Error("Piece not found");
-    await ctx.db.patch(args.pieceId, {
+    await ctx.db.patch("pieces", args.pieceId, {
       images: [...piece.images, args.storageId],
     });
     return null;
@@ -1437,9 +1509,9 @@ export const removeImage = mutation({
   args: { pieceId: v.id("pieces"), storageId: v.id("_storage") },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const piece = await ctx.db.get(args.pieceId);
+    const piece = await ctx.db.get("pieces", args.pieceId);
     if (!piece) throw new Error("Piece not found");
-    await ctx.db.patch(args.pieceId, {
+    await ctx.db.patch("pieces", args.pieceId, {
       images: piece.images.filter((id) => id !== args.storageId),
     });
     await ctx.storage.delete(args.storageId);
