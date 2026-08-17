@@ -24,6 +24,21 @@ const MODE_LABELS: Record<Mode, string> = {
   drop: "Small batch / drop",
 };
 
+/**
+ * Format an epoch for a <input type="datetime-local">.
+ *
+ * Must use the LOCAL getters, not toISOString(): the input renders and parses
+ * its value as local wall-clock time, so feeding it a UTC string shifts the
+ * release by the UTC offset on every save — 2pm becomes 7pm, then midnight.
+ * Parsing back is already correct, since a "YYYY-MM-DDTHH:mm" string with no
+ * zone is defined to be local.
+ */
+function toDateTimeLocal(epochMs: number): string {
+  const d = new Date(epochMs);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 /** Stock semantics differ per mode; null means unlimited. */
 function defaultStockFor(mode: Mode): number | null {
   if (mode === "oneoff") return 1;
@@ -82,9 +97,7 @@ function PieceFormFields({ piece }: { piece?: Doc<"pieces"> }) {
     return fallback === null ? "" : String(fallback);
   });
   const [releaseAt, setReleaseAt] = useState(
-    piece?.releaseAt
-      ? new Date(piece.releaseAt).toISOString().slice(0, 16)
-      : "",
+    piece?.releaseAt ? toDateTimeLocal(piece.releaseAt) : "",
   );
   const [leadTimeWeeks, setLeadTimeWeeks] = useState(
     piece?.leadTimeWeeks !== undefined && piece.leadTimeWeeks !== null
