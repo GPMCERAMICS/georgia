@@ -1,23 +1,18 @@
 import type { Metadata } from "next";
-import { Figtree } from "next/font/google";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { site } from "@/lib/site";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import "./globals.css";
 
-// Display serif — self-hosted Zvon Serif (variable), the brand's headline face.
-const zvon = localFont({
-  src: "./fonts/ZvonSerifGX.ttf",
-  variable: "--font-display",
-  weight: "400 900",
+// Clust, used for both headlines and body. One static weight, so it is
+// declared 400 and the browser synthesises the heavier `font-medium` runs.
+// OTF rather than the TTF: same outlines, 43K against 105K.
+const clust = localFont({
+  src: "./fonts/Clust.otf",
+  variable: "--font-clust",
+  weight: "400",
   display: "swap",
-});
-
-// Body — quiet, humanist, highly legible.
-const figtree = Figtree({
-  variable: "--font-sans",
-  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -62,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${zvon.variable} ${figtree.variable} h-full antialiased`}
+      className={`${clust.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ConvexClientProvider>
