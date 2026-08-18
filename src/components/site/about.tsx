@@ -31,8 +31,7 @@ export function About() {
         </div>
 
         <div className="order-1 md:order-2">
-          <p className="mb-5 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-            <span className="h-px w-8 rule-clay" />
+          <p className="mb-5 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
             The maker
           </p>
           <h2 className="text-balance font-display text-4xl leading-tight md:text-5xl">

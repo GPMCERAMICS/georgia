@@ -7,9 +7,8 @@ export function CollectionSection({ collection }: { collection: Collection }) {
     <section id={collection.id} className="scroll-mt-24">
       {/* Header row: framed image | title + description */}
       <div className="grid items-center gap-8 md:grid-cols-3 md:gap-10">
-        {/* Framed image — same rounded + rotated-underlay treatment as the hero */}
+        {/* Framed image */}
         <div className="relative">
-          <div className="absolute -inset-3 -rotate-2 rounded-[2rem] bg-secondary" />
           <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-xl">
             <Image
               src={collection.image}

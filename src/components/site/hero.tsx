@@ -9,8 +9,7 @@ export function Hero() {
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-16 md:grid-cols-[1.1fr_0.9fr] md:pb-28 md:pt-24">
         {/* Copy */}
         <div className="animate-rise">
-          <p className="mb-5 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-            <span className="h-px w-8 rule-clay" />
+          <p className="mb-5 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
             Handmade ceramics
           </p>
           <h1 className="text-balance font-display text-5xl leading-[0.98] tracking-tight sm:text-6xl md:text-7xl">
@@ -38,7 +37,6 @@ export function Hero() {
         {/* Art */}
         <div className="animate-rise [animation-delay:120ms]">
           <div className="relative mx-auto aspect-[4/5] w-full max-w-md">
-            <div className="absolute -inset-3 -rotate-2 rounded-[2rem] bg-secondary" />
             <div className="absolute inset-0 overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_30px_60px_-30px_oklch(0.2_0.05_260/0.45)]">
               <Image
                 src="/hero-owl.png"

@@ -5,8 +5,7 @@ export function Collections() {
   return (
     <section id="work" className="scroll-mt-20">
       <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <p className="flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-          <span className="h-px w-8 rule-clay" />
+        <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
           Commission collection
         </p>
 
