@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { unstable_rethrow } from "next/navigation";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import { nowForCatalog } from "@/lib/catalog-time";
@@ -33,6 +34,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
     }
   } catch (error) {
+    // Let Next's control errors (e.g. the bail-out to dynamic rendering
+    // during build) propagate — swallowing them would freeze the sitemap
+    // as a static snapshot without piece URLs.
+    unstable_rethrow(error);
     console.error("sitemap: could not list published pieces", error);
   }
 

@@ -1,8 +1,15 @@
 import Image from "next/image";
+import type { PublicPiece } from "@convex/pieces";
+import { ShopPieceCard } from "@/components/shop/shop-piece-card";
 import type { Collection } from "@/lib/site";
-import { PieceCard } from "./piece-card";
 
-export function CollectionSection({ collection }: { collection: Collection }) {
+export function CollectionSection({
+  collection,
+  pieces,
+}: {
+  collection: Collection;
+  pieces: PublicPiece[];
+}) {
   return (
     <section id={collection.id} className="scroll-mt-24">
       {/* Header row: framed image | title + description */}
@@ -45,12 +52,18 @@ export function CollectionSection({ collection }: { collection: Collection }) {
         </div>
       </div>
 
-      {/* Grid of commission pieces (square) */}
-      <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {collection.pieces.map((piece) => (
-          <PieceCard key={piece.id} piece={piece} />
-        ))}
-      </div>
+      {/* Grid of shop pieces (square), linking to their product pages */}
+      {pieces.length > 0 ? (
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {pieces.map((piece) => (
+            <ShopPieceCard key={piece._id} piece={piece} />
+          ))}
+        </div>
+      ) : (
+        <p className="mt-10 text-muted-foreground">
+          New pieces coming soon — commissions are open.
+        </p>
+      )}
     </section>
   );
 }

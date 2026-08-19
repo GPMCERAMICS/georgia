@@ -1,14 +1,20 @@
-import { collections, site } from "@/lib/site";
+import type { PublicPiece } from "@convex/pieces";
+import { collectionLabel } from "@/lib/shop";
+import { site } from "@/lib/site";
 
-const pieces = collections.flatMap((c) =>
-  c.pieces.map((p) => ({ ...p, category: c.name })),
-);
+const schemaAvailability = {
+  available: "https://schema.org/InStock",
+  sold: "https://schema.org/SoldOut",
+  unreleased: "https://schema.org/PreOrder",
+  hidden: "https://schema.org/OutOfStock",
+} as const;
 
 /**
  * Structured data for search engines. LocalBusiness powers local/Maps results;
- * each Product helps pieces surface in shopping/rich results.
+ * each Product entry points at its live shop page, which carries the full
+ * Product markup of its own.
  */
-export function JsonLd() {
+export function JsonLd({ pieces }: { pieces: PublicPiece[] }) {
   const graph = [
     {
       "@type": "LocalBusiness",
@@ -27,25 +33,22 @@ export function JsonLd() {
       },
       sameAs: [site.social.instagram, site.social.pinterest].filter(Boolean),
     },
-    // Only real, priced pieces get Product markup (skip "coming soon" placeholders).
-    ...pieces
-      .map((piece) => ({ piece, amount: piece.price.replace(/[^0-9.]/g, "") }))
-      .filter(({ amount }) => amount.length > 0)
-      .map(({ piece, amount }) => ({
-        "@type": "Product",
-        "@id": `${site.url}/#${piece.id}`,
-        name: piece.title,
-        description: piece.description,
-        category: piece.category,
-        brand: { "@type": "Brand", name: site.name },
-        offers: {
-          "@type": "Offer",
-          price: amount,
-          priceCurrency: "USD",
-          availability: "https://schema.org/InStock",
-          url: `${site.url}/#${piece.id.split("-")[0]}`,
-        },
-      })),
+    ...pieces.map((piece) => ({
+      "@type": "Product",
+      "@id": `${site.url}/shop/${piece.slug}`,
+      name: piece.title,
+      description: piece.description,
+      category: collectionLabel[piece.collection],
+      image: piece.imageUrls.slice(0, 1),
+      brand: { "@type": "Brand", name: site.name },
+      offers: {
+        "@type": "Offer",
+        price: (piece.priceCents / 100).toFixed(2),
+        priceCurrency: "USD",
+        availability: schemaAvailability[piece.availability.state],
+        url: `${site.url}/shop/${piece.slug}`,
+      },
+    })),
   ];
 
   const json = {

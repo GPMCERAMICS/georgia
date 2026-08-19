@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   useQuery,
   usePreloadedQuery,
@@ -9,8 +8,8 @@ import {
 } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { nowForCatalog } from "@/lib/catalog-time";
 import { ShopPieceCard } from "./shop-piece-card";
+import { useCatalogNow } from "./use-catalog-now";
 
 /**
  * The catalog grid. Server-rendered from the preloaded query for real HTML,
@@ -24,13 +23,7 @@ export function ShopGrid({
   preloaded: Preloaded<typeof api.pieces.listPublished>;
 }) {
   const initial = usePreloadedQuery(preloaded);
-
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    setNow(nowForCatalog());
-    const tick = setInterval(() => setNow(nowForCatalog()), 60_000);
-    return () => clearInterval(tick);
-  }, []);
+  const now = useCatalogNow();
   const live = useQuery(
     api.pieces.listPublished,
     now === null ? "skip" : { now },

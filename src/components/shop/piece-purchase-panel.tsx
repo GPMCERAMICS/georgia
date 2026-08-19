@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   useQuery,
   usePreloadedQuery,
@@ -9,8 +8,8 @@ import {
 } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { nowForCatalog } from "@/lib/catalog-time";
 import { availabilityLine, formatPrice } from "@/lib/shop";
+import { useCatalogNow } from "./use-catalog-now";
 
 /**
  * Price, live availability, and the call to action.
@@ -27,13 +26,7 @@ export function PiecePurchasePanel({
   preloaded: Preloaded<typeof api.pieces.getBySlug>;
 }) {
   const initial = usePreloadedQuery(preloaded);
-
-  const [now, setNow] = useState<number | null>(null);
-  useEffect(() => {
-    setNow(nowForCatalog());
-    const tick = setInterval(() => setNow(nowForCatalog()), 60_000);
-    return () => clearInterval(tick);
-  }, []);
+  const now = useCatalogNow();
   const slug = initial?.slug;
   const live = useQuery(
     api.pieces.getBySlug,
