@@ -37,16 +37,14 @@ export function Hero() {
         {/* Art */}
         <div className="animate-rise [animation-delay:120ms]">
           <div className="relative mx-auto aspect-[4/5] w-full max-w-md">
-            <div className="absolute inset-0 -rotate-[33deg] overflow-hidden rounded-[2rem] border border-border bg-card shadow-[0_30px_60px_-30px_oklch(0.2_0.05_260/0.45)]">
-              <Image
-                src="/crabbie.webp"
-                alt="Watercolor crab plate — signature artwork of Georgia Perkins Pottery"
-                fill
-                priority
-                sizes="(min-width: 768px) 28rem, 100vw"
-                className="object-cover"
-              />
-            </div>
+            <Image
+              src="/crabbie.webp"
+              alt="Watercolor crab plate — signature artwork of Georgia Perkins Pottery"
+              fill
+              priority
+              sizes="(min-width: 768px) 28rem, 100vw"
+              className="-rotate-[33deg] object-contain"
+            />
           </div>
         </div>
       </div>
