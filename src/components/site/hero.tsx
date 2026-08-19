@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { site } from "@/lib/site";
-import { HeroSwirls } from "./hero-swirls";
 
 export function Hero() {
   return (
@@ -49,8 +48,6 @@ export function Hero() {
           </div>
         </div>
       </div>
-
-      <HeroSwirls />
     </section>
   );
 }
