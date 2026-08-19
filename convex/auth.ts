@@ -2,6 +2,7 @@
 import { Password } from "@convex-dev/auth/providers/Password";
 import { convexAuth } from "@convex-dev/auth/server";
 import type { DataModel } from "./_generated/dataModel";
+import { isAdminEmail } from "./lib/adminEmails";
 
 /**
  * Email + password, not a magic link.
@@ -22,12 +23,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         const email = String(params.email ?? "")
           .trim()
           .toLowerCase();
-        const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 
-        if (!adminEmail) {
-          throw new Error("ADMIN_EMAIL is not configured on this deployment");
-        }
-        if (email !== adminEmail) {
+        if (!isAdminEmail(email)) {
           throw new Error("That email address cannot sign in here.");
         }
         return { email };

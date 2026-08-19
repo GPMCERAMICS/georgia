@@ -1,22 +1,18 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
+import { isAdminEmail } from "./adminEmails";
 
 /**
- * Georgia is the only user. Rather than a role system, we compare the signed-in
- * email against ADMIN_EMAIL. Anyone else who completes a magic link gets an
- * account with no capabilities.
+ * Rather than a role system, we compare the signed-in email against the
+ * ADMIN_EMAIL allowlist. Anyone else who somehow gets an account has no
+ * capabilities.
  */
 export async function requireAdmin(ctx: QueryCtx | MutationCtx): Promise<void> {
   const userId = await getAuthUserId(ctx);
   if (userId === null) throw new Error("Not authorised");
 
   const user = await ctx.db.get("users", userId);
-  const adminEmail = process.env.ADMIN_EMAIL;
-
-  if (!adminEmail) {
-    throw new Error("ADMIN_EMAIL is not configured on the Convex deployment");
-  }
-  if (!user || user.email?.toLowerCase() !== adminEmail.toLowerCase()) {
+  if (!user || !isAdminEmail(user.email)) {
     throw new Error("Not authorised");
   }
 }

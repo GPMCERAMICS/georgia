@@ -13,6 +13,7 @@ import type * as admin_pieces from "../admin/pieces.js";
 import type * as admin_uploads from "../admin/uploads.js";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as lib_adminEmails from "../lib/adminEmails.js";
 import type * as lib_adminGuard from "../lib/adminGuard.js";
 import type * as lib_availability from "../lib/availability.js";
 import type * as pieces from "../pieces.js";
@@ -29,6 +30,7 @@ declare const fullApi: ApiFromModules<{
   "admin/uploads": typeof admin_uploads;
   auth: typeof auth;
   http: typeof http;
+  "lib/adminEmails": typeof lib_adminEmails;
   "lib/adminGuard": typeof lib_adminGuard;
   "lib/availability": typeof lib_availability;
   pieces: typeof pieces;
