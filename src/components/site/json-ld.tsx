@@ -25,12 +25,8 @@ export function JsonLd({ pieces }: { pieces: PublicPiece[] }) {
       email: site.email,
       image: `${site.url}/opengraph-image`,
       priceRange: "$$",
-      address: {
-        "@type": "PostalAddress",
-        addressLocality: site.location.city,
-        addressRegion: site.location.region,
-        addressCountry: site.location.country,
-      },
+      // PLACEHOLDER: address omitted until the real city/state arrive — re-add
+      // a PostalAddress from site.location for local SEO once known.
       sameAs: [site.social.instagram, site.social.pinterest].filter(Boolean),
     },
     ...pieces.map((piece) => ({
