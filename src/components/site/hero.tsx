@@ -45,7 +45,7 @@ export function Hero() {
               height={1080}
               priority
               sizes="(min-width: 768px) 28rem, 100vw"
-              className="h-auto w-full -rotate-[33deg] md:scale-[2]"
+              className="h-auto w-full -translate-y-1/2 translate-x-1/4 -rotate-[33deg] sm:translate-x-0 sm:translate-y-0 sm:scale-150 md:scale-[2]"
             />
           </div>
         </div>
