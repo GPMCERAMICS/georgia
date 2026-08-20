@@ -25,8 +25,8 @@ export const site = {
   // PLACEHOLDER — where commission inquiries are emailed. Also shown in footer.
   email: "hello@georgiaperkinspottery.com",
 
-  // PLACEHOLDER — canonical site URL (set NEXT_PUBLIC_SITE_URL in prod).
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://georgiaperkinspottery.com",
+  // Canonical production URL — the apex 308s to www.
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gpmceramics.com",
 
   // PLACEHOLDER social links (empty string hides the link).
   social: {
