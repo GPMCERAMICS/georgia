@@ -41,7 +41,7 @@ export function Commission() {
           {commission.gallery.map((image, i) => (
             <div
               key={image.src}
-              className={`overflow-hidden rounded-2xl border border-border shadow-sm ${i % 2 === 0 ? "mt-8" : ""}`}
+              className={`aspect-square self-start overflow-hidden rounded-2xl border border-border shadow-sm ${i % 2 === 0 ? "mt-8" : ""}`}
             >
               <Image
                 src={image.src}
@@ -49,7 +49,7 @@ export function Commission() {
                 width={540}
                 height={540}
                 sizes="(min-width: 768px) 16rem, 45vw"
-                className="aspect-square w-full object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
           ))}
