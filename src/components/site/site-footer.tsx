@@ -54,10 +54,16 @@ export function SiteFooter() {
             )}
           </div>
           <Link
-            href="#commission"
+            href="/#commission"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
             Commission a piece
+          </Link>
+          <Link
+            href="/faq"
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            FAQ
           </Link>
         </div>
       </div>
