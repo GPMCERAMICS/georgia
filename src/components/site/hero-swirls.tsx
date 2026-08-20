@@ -3,25 +3,25 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-/** Opacity hits 0 after this share of a viewport height of scrolling. */
-const FADE_DISTANCE_VH = 0.7;
-
 /**
- * Decorative swirl band fixed to the bottom of the viewport, so it holds its
- * position while the hero scrolls away. Layered behind all page content
- * (-z-10) and shifted down by half its height so only the top half peeks in.
- * No animation — opacity is a pure function of scroll position, 1 at the top
- * of the page to 0.
+ * Decorative swirl band fixed to the bottom of the viewport, layered behind
+ * all page content (-z-10). It stays visible for the whole page: as the user
+ * scrolls from top to bottom, opacity eases 100% → 50% and the band slides
+ * from 50% to 90% of its height below the viewport edge. Both are pure
+ * functions of scroll progress — no animation.
  */
 export function HeroSwirls() {
-  const [opacity, setOpacity] = useState(1);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let raf = 0;
     const update = () => {
       raf = 0;
-      const fadeDistance = window.innerHeight * FADE_DISTANCE_VH;
-      setOpacity(Math.max(0, 1 - window.scrollY / fadeDistance));
+      const scrollable = Math.max(
+        1,
+        document.documentElement.scrollHeight - window.innerHeight,
+      );
+      setProgress(Math.min(1, Math.max(0, window.scrollY / scrollable)));
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
@@ -36,13 +36,14 @@ export function HeroSwirls() {
     };
   }, []);
 
-  if (opacity === 0) return null;
+  const opacity = 1 - 0.5 * progress;
+  const translateY = 50 + 40 * progress;
 
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-x-0 bottom-0 -z-10 translate-y-1/2"
-      style={{ opacity }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 -z-10"
+      style={{ opacity, transform: `translateY(${translateY}%)` }}
     >
       <Image
         src="/swirls-bg.webp"

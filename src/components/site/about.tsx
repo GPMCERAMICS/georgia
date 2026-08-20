@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { site } from "@/lib/site";
 
 export function About() {
@@ -42,6 +44,14 @@ export function About() {
               <p key={i}>{p}</p>
             ))}
           </div>
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="mt-8 rounded-full border-primary/30 bg-transparent px-7"
+          >
+            <Link href="/contact">Learn more</Link>
+          </Button>
         </div>
       </div>
     </section>

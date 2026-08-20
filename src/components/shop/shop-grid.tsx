@@ -7,6 +7,7 @@ import {
   type Preloaded,
 } from "convex/react";
 import { api } from "@convex/_generated/api";
+import type { PublicPiece } from "@convex/pieces";
 import { Button } from "@/components/ui/button";
 import { ShopPieceCard } from "./shop-piece-card";
 import { useCatalogNow } from "./use-catalog-now";
@@ -19,8 +20,10 @@ import { useCatalogNow } from "./use-catalog-now";
  */
 export function ShopGrid({
   preloaded,
+  collection,
 }: {
   preloaded: Preloaded<typeof api.pieces.listPublished>;
+  collection?: PublicPiece["collection"];
 }) {
   const initial = usePreloadedQuery(preloaded);
   const now = useCatalogNow();
@@ -29,7 +32,17 @@ export function ShopGrid({
     now === null ? "skip" : { now },
   );
 
-  const pieces = live ?? initial;
+  const pieces = (live ?? initial).filter(
+    (piece) => collection === undefined || piece.collection === collection,
+  );
+
+  if (pieces.length === 0 && collection !== undefined) {
+    return (
+      <p className="text-muted-foreground">
+        No pieces in this collection yet — new work is on the way.
+      </p>
+    );
+  }
 
   if (pieces.length === 0) {
     return (

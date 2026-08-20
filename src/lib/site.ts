@@ -2,15 +2,15 @@
  * Central content for the Georgia Perkins Pottery site.
  *
  * This is the ONE file Georgia edits to change copy, contact details, and the
- * pieces shown in the shop. Placeholders are marked with `PLACEHOLDER` — swap
- * them for real values (location, email, photos, Stripe links) when ready.
+ * shop section headers. Placeholders are marked with `PLACEHOLDER` — swap
+ * them for real values (location, email, photos) when ready.
  */
 
 export const site = {
   name: "Georgia Perkins Pottery",
   shortName: "Georgia Perkins",
   // Used in <title>, JSON-LD, and the hero.
-  tagline: "Artisanal plates & garden pieces, thrown by hand.",
+  tagline: "Whimsical hand painted ceramics.",
   description:
     "Handmade artisanal pottery by Georgia Perkins — one-of-a-kind plates, " +
     "garden pieces, and custom commissions, each thrown and glazed by hand.",
@@ -35,164 +35,70 @@ export const site = {
   },
 
   about: {
-    heading: "Made by hand, one piece at a time",
+    heading: "Meet Georgia Perkins-Miller",
     body: [
-      "Georgia Perkins has spent years at the wheel shaping clay into pieces " +
-        "meant to be lived with — plates that hold a weeknight dinner, vessels " +
-        "that anchor a garden bed, forms that feel quietly at home.",
-      "Every piece is thrown, trimmed, and glazed by hand in small batches, so " +
-        "no two are exactly alike. Slight variations in tone and texture are the " +
-        "fingerprint of the maker, not a flaw.",
+      "Inspired by the Marshes and Coastline of the Golden Aisle, Georgia's " +
+        "connection to sea creates a visual story told through color, whimsy " +
+        "and joy of nature.",
     ],
   },
 } as const;
 
-// A single commission piece. Photos are square (1:1) as provided.
-export type Piece = {
-  id: string;
-  title: string;
-  description: string;
-  /** Display price, e.g. "$68". */
-  price: string;
-  /** Dimensions, e.g. '14" platter' or '8" × 8"'. */
-  size?: string;
-  /** Optional square photo in /public. When absent, an on-brand placeholder renders. */
-  image?: string;
-  /** PLACEHOLDER — paste a Stripe Payment Link here later to enable the Buy button. */
-  stripeLink?: string;
-  /** One of the placeholder vessel silhouettes: 0–3 (used until a real photo lands). */
-  shape: 0 | 1 | 2 | 3;
-};
-
-// A themed group of commission pieces, fronted by a horizontal banner image.
+/**
+ * A shopping section on the homepage. The id matches the Convex piece
+ * `collection` value, so each section renders the live catalog filtered to it
+ * and its button links to the shop pre-filtered.
+ */
 export type Collection = {
-  id: string;
+  id: "wildlife" | "totems";
   name: string;
-  eyebrow: string;
   tagline: string;
-  /** Horizontal banner image in /public. */
-  image: string;
-  pieces: Piece[];
+  /** Optional horizontal banner image in /public. */
+  image?: string;
 };
 
-// PLACEHOLDER pieces per collection — real titles, sizes, prices, and square
-// photos get filled in next. Set `image` on a piece to replace its placeholder.
 export const collections: Collection[] = [
   {
     id: "wildlife",
-    name: "Wildlife",
-    eyebrow: "Commission collection",
+    name: "Coastal Living",
     tagline:
-      "Birds, fish, and creatures hand-painted in bold, folk-geometric color — " +
-      "statement platters and plates made to be hung as much as used.",
+      "Georgia's Golden Aisle sets the backdrop for coastal themed wildlife " +
+      "pieces of art. Handmade, hand painted and totally unique.",
     image: "/wildlife.png",
-    // NOTE: titles are descriptive placeholders; sizes + prices pending Georgia.
-    pieces: [
-      {
-        id: "wildlife-kingfisher",
-        title: "Kingfisher Plate",
-        description:
-          "A sacred kingfisher in blue-and-green watercolor, ringed by the " +
-          "signature navy geometric band.",
-        price: "Inquire",
-        image: "/wildlife-kingfisher.png",
-        shape: 0,
-      },
-      {
-        id: "wildlife-owl",
-        title: "Great Horned Owl Plate",
-        description:
-          "A great horned owl in loose watercolor, set against a sunburst of " +
-          "ochre and gold.",
-        price: "Inquire",
-        image: "/wildlife-owl.png",
-        shape: 1,
-      },
-      {
-        id: "wildlife-snapper",
-        title: "Twin Snapper Plate",
-        description:
-          "A pair of snapper over red gingham and hand-drawn waves — a nod to " +
-          "the day's catch.",
-        price: "Inquire",
-        image: "/wildlife-snapper.png",
-        shape: 2,
-      },
-      {
-        id: "wildlife-sardines",
-        title: "Sardine Fish Platter",
-        description:
-          "A fish-shaped platter with two spotted sardines in sunlit orange " +
-          "and teal.",
-        price: "Inquire",
-        image: "/wildlife-fish-platter.png",
-        shape: 3,
-      },
-      {
-        id: "wildlife-pufferfish",
-        title: "Pufferfish Plate",
-        description:
-          "A puffed-up pufferfish adrift in a sea of hand-drawn swirls, in " +
-          "cobalt line work.",
-        price: "Inquire",
-        image: "/wildlife-pufferfish.png",
-        shape: 0,
-      },
-    ],
   },
   {
-    id: "heirloom",
-    name: "Heirloom",
-    eyebrow: "Commission collection",
+    // PLACEHOLDER banner image — add one to /public and set `image` here.
+    id: "totems",
+    name: "Garden and Floral",
     tagline:
-      "Commemorative platters and keepsakes — houses, names, dates, and the small " +
-      "details of a life, drawn in fine line work to be passed down.",
-    image: "/heirloom.png",
-    // NOTE: titles are descriptive placeholders; sizes + prices pending Georgia.
-    pieces: [
-      {
-        id: "heirloom-mendacity",
-        title: "Custom Home Platter",
-        description:
-          "A blue toile portrait of the family home, framed by the pets, " +
-          "pastimes, and wildlife that make it theirs.",
-        price: "Inquire",
-        image: "/heirloom-mendacity.png",
-        shape: 2,
-      },
-      {
-        id: "heirloom-hole-in-one",
-        title: "Hole-in-One Plate",
-        description:
-          "A commemorative plate marking the course, the date, and the shot " +
-          "of a lifetime.",
-        price: "Inquire",
-        image: "/heirloom-hole-in-one.png",
-        shape: 0,
-      },
-      {
-        id: "heirloom-anniversary",
-        title: "Anniversary Portrait Platter",
-        description:
-          "Hand-drawn vignettes of a life together — portraits, places, and " +
-          "the moments worth keeping.",
-        price: "Inquire",
-        image: "/heirloom-norma-harry.png",
-        shape: 1,
-      },
-      {
-        id: "heirloom-wedding",
-        title: "Wedding Commemorative Platter",
-        description:
-          "A monogrammed keepsake of the day, ringed with the couple's " +
-          "story, hobbies, and home.",
-        price: "Inquire",
-        image: "/heirloom-wedding.png",
-        shape: 3,
-      },
-    ],
+      "Colorful pieces to brighten up your indoor and outdoor space. Totems, " +
+      "vases and flower pots sculptured and painted by hand inspired by " +
+      "coastal wildlife.",
   },
 ];
+
+// The commissions section of the homepage and the /commissions page.
+export const commission = {
+  eyebrow: "Heirloom & custom",
+  heading:
+    "Commission handmade ceramics to preserve your family history or " +
+    "celebrate milestones",
+  body: "Unique and Custom art pieces unique to you, your family or accomplishments",
+  occasions: [
+    "Weddings",
+    "New and old homes / homesteads",
+    "Hole in one",
+    "Anniversaries",
+    "Birthdays",
+  ],
+  /** Example commission pieces shown alongside the copy. */
+  gallery: [
+    { src: "/heirloom-wedding.png", alt: "Wedding commemorative platter" },
+    { src: "/heirloom-hole-in-one.png", alt: "Hole-in-one commemorative plate" },
+    { src: "/heirloom-norma-harry.png", alt: "Anniversary portrait platter" },
+    { src: "/heirloom-mendacity.png", alt: "Custom home platter" },
+  ],
+} as const;
 
 // Options offered in the commission form's "piece type" select.
 export const commissionTypes = [
