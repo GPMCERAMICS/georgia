@@ -53,8 +53,6 @@ export type Collection = {
   id: "wildlife" | "totems";
   name: string;
   tagline: string;
-  /** Optional horizontal banner image in /public. */
-  image?: string;
 };
 
 export const collections: Collection[] = [
@@ -64,10 +62,8 @@ export const collections: Collection[] = [
     tagline:
       "Georgia's Golden Aisle sets the backdrop for coastal themed wildlife " +
       "pieces of art. Handmade, hand painted and totally unique.",
-    image: "/wildlife.png",
   },
   {
-    // PLACEHOLDER banner image — add one to /public and set `image` here.
     id: "totems",
     name: "Garden and Floral",
     tagline:
