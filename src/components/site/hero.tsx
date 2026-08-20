@@ -6,7 +6,7 @@ import { HeroSwirls } from "./hero-swirls";
 export function Hero() {
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-16 md:grid-cols-[1.1fr_0.9fr] md:pb-28 md:pt-24">
+      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-12 px-6 pb-20 pt-16 md:grid-cols-[1.1fr_0.9fr] md:pb-28 md:pt-24">
         {/* Copy */}
         <div className="animate-rise relative z-10">
           <p className="mb-5 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
@@ -45,7 +45,7 @@ export function Hero() {
               height={1080}
               priority
               sizes="(min-width: 768px) 28rem, 100vw"
-              className="h-auto w-full -translate-y-1/2 translate-x-1/4 -rotate-[33deg] sm:translate-x-0 sm:translate-y-0 sm:scale-150 md:scale-[2]"
+              className="h-auto w-full -translate-y-1/4 translate-x-1/4 -rotate-[33deg] sm:translate-x-0 sm:translate-y-0 sm:scale-150 md:scale-[2]"
             />
           </div>
         </div>
