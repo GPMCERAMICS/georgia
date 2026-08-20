@@ -17,8 +17,9 @@ export const releaseDateLabel = (ms: number) =>
   }).format(ms);
 
 export const collectionLabel: Record<PublicPiece["collection"], string> = {
-  wildlife: "Wildlife",
+  wildlife: "Coastal Living",
   heirloom: "Heirloom",
+  totems: "Garden and Floral",
 };
 
 /**

@@ -10,7 +10,7 @@ export type PublicPiece = {
   slug: string;
   description: string;
   size: string | null;
-  collection: "wildlife" | "heirloom";
+  collection: "wildlife" | "heirloom" | "totems";
   mode: "oneoff" | "madeToOrder" | "deposit" | "drop";
   priceCents: number;
   leadTimeWeeks: number | null;

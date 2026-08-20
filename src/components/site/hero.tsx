@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { site } from "@/lib/site";
 import { HeroSwirls } from "./hero-swirls";
 
 export function Hero() {
@@ -14,15 +13,16 @@ export function Hero() {
             Handmade ceramics
           </p>
           <h1 className="text-balance font-display text-5xl leading-[0.98] tracking-tight sm:text-6xl md:text-7xl">
-            Artisanal plates &amp; garden pieces,{" "}
-            <em className="text-primary not-italic">thrown by hand.</em>
+            Whimsical Hand Painted{" "}
+            <em className="text-primary not-italic">Ceramics</em>
           </h1>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
-            {site.description}
+            Each piece is Unique and Handmade. Filling your home and life with
+            color, fun and art with attitude
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Button asChild size="lg" className="rounded-full px-7">
-              <Link href="#commission">Commission a piece</Link>
+              <Link href="/shop">Shop now</Link>
             </Button>
             <Button
               asChild
@@ -30,7 +30,7 @@ export function Hero() {
               variant="outline"
               className="rounded-full border-primary/30 bg-transparent px-7"
             >
-              <Link href="#work">Shop the work</Link>
+              <Link href="#commission">Custom pieces</Link>
             </Button>
           </div>
         </div>

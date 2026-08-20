@@ -5,6 +5,7 @@ import { authTables } from "@convex-dev/auth/server";
 export const pieceCollection = v.union(
   v.literal("wildlife"),
   v.literal("heirloom"),
+  v.literal("totems"),
 );
 
 export const pieceMode = v.union(

@@ -231,6 +231,7 @@ function PieceFormFields({ piece }: { piece?: Doc<"pieces"> }) {
         >
           <option value="wildlife">Wildlife</option>
           <option value="heirloom">Heirloom</option>
+          <option value="totems">Totems</option>
         </select>
       </div>
 

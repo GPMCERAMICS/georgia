@@ -16,6 +16,7 @@ const money = (cents: number) =>
 const collectionLabel: Record<Doc<"pieces">["collection"], string> = {
   wildlife: "Wildlife",
   heirloom: "Heirloom",
+  totems: "Totems",
 };
 
 const modeLabel: Record<Doc<"pieces">["mode"], string> = {
