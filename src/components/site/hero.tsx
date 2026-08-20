@@ -37,14 +37,15 @@ export function Hero() {
 
         {/* Art */}
         <div className="animate-rise [animation-delay:120ms]">
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-md">
+          <div className="mx-auto w-full max-w-md">
             <Image
               src="/crabbie.webp"
               alt="Watercolor crab plate — signature artwork of Georgia Perkins Pottery"
-              fill
+              width={1080}
+              height={1080}
               priority
               sizes="(min-width: 768px) 28rem, 100vw"
-              className="-rotate-[33deg] scale-[2] object-contain"
+              className="h-auto w-full -rotate-[33deg] md:scale-[2]"
             />
           </div>
         </div>

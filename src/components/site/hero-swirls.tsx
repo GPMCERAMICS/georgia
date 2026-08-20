@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 /**
  * Decorative swirl band fixed to the bottom of the viewport, layered behind
  * all page content (-z-10). It stays visible for the whole page: as the user
- * scrolls from top to bottom, opacity eases 100% → 50% and the band slides
- * from 50% to 90% of its height below the viewport edge. Both are pure
- * functions of scroll progress — no animation.
+ * scrolls from top to bottom, the band slides from 50% to 70% of its height
+ * below the viewport edge — a pure function of scroll progress, no animation
+ * and no fading.
  */
 export function HeroSwirls() {
   const [progress, setProgress] = useState(0);
@@ -36,14 +36,13 @@ export function HeroSwirls() {
     };
   }, []);
 
-  const opacity = 1 - 0.5 * progress;
-  const translateY = 50 + 40 * progress;
+  const translateY = 50 + 20 * progress;
 
   return (
     <div
       aria-hidden
       className="pointer-events-none fixed inset-x-0 bottom-0 -z-10"
-      style={{ opacity, transform: `translateY(${translateY}%)` }}
+      style={{ transform: `translateY(${translateY}%)` }}
     >
       <Image
         src="/swirls-bg.webp"
