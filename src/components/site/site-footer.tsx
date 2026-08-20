@@ -20,7 +20,7 @@ export function SiteFooter() {
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
             Handmade artisanal ceramics &mdash; plates, garden pieces, and custom
-            commissions from {site.location.city}, {site.location.region}.
+            commissions from coastal Georgia.
           </p>
         </div>
 
