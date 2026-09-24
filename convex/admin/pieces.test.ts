@@ -43,13 +43,17 @@ const newPieceArgs = {
   slug: "kingfisher-plate",
   description: "A sacred kingfisher.",
   size: '10" plate',
-  collection: "wildlife" as const,
+  tags: ["wildlife"],
   mode: "oneoff" as const,
   priceCents: 18000,
   stock: 1,
-  releaseAt: null,
   leadTimeWeeks: null,
   shippingTier: "plate" as const,
+  dimensions: null,
+  weightOz: null,
+  foodSafe: true,
+  dishwasherSafe: false,
+  careNotes: null,
 };
 
 describe("admin.pieces.create", () => {
@@ -231,7 +235,7 @@ describe("admin.pieces.reorder", () => {
       orderedIds: [second, first],
     });
 
-    const all = await admin.query(api.admin.pieces.list, {});
+    const all = await admin.query(api.admin.pieces.list, { now: NOW });
     expect(all.map((p) => p.title)).toEqual(["Owl Plate", "Kingfisher Plate"]);
   });
 });

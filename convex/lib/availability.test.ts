@@ -1,16 +1,12 @@
 import { describe, expect, test } from "vitest";
 import { computeAvailability } from "./availability";
 
-const NOW = 1_800_000_000_000;
-
 // Defaults describe a published, in-stock one-off with no holds.
 const base = {
   status: "published" as const,
   stock: 1 as number | null,
-  releaseAt: null as number | null,
   paidCount: 0,
   activeHoldCount: 0,
-  now: NOW,
 };
 
 describe("computeAvailability", () => {
@@ -23,19 +19,6 @@ describe("computeAvailability", () => {
   test("an archived piece is hidden", () => {
     expect(computeAvailability({ ...base, status: "archived" })).toEqual({
       state: "hidden",
-    });
-  });
-
-  test("a drop before its release time is unreleased", () => {
-    expect(
-      computeAvailability({ ...base, stock: 5, releaseAt: NOW + 1000 }),
-    ).toEqual({ state: "unreleased", releaseAt: NOW + 1000 });
-  });
-
-  test("a drop at exactly its release time is available", () => {
-    expect(computeAvailability({ ...base, stock: 5, releaseAt: NOW })).toEqual({
-      state: "available",
-      remaining: 5,
     });
   });
 
@@ -58,25 +41,15 @@ describe("computeAvailability", () => {
     });
   });
 
-  test("a drop counts paid and held against its stock", () => {
+  test("multi-stock counts paid and held against its stock", () => {
     expect(
-      computeAvailability({
-        ...base,
-        stock: 5,
-        paidCount: 2,
-        activeHoldCount: 1,
-      }),
+      computeAvailability({ ...base, stock: 5, paidCount: 2, activeHoldCount: 1 }),
     ).toEqual({ state: "available", remaining: 2 });
   });
 
-  test("a fully claimed drop is sold", () => {
+  test("fully claimed stock is sold", () => {
     expect(
-      computeAvailability({
-        ...base,
-        stock: 5,
-        paidCount: 4,
-        activeHoldCount: 1,
-      }),
+      computeAvailability({ ...base, stock: 5, paidCount: 4, activeHoldCount: 1 }),
     ).toEqual({ state: "sold" });
   });
 
@@ -87,18 +60,15 @@ describe("computeAvailability", () => {
   });
 
   test("null stock (made-to-order) is always available with no limit", () => {
-    expect(
-      computeAvailability({ ...base, stock: null, paidCount: 99 }),
-    ).toEqual({ state: "available", remaining: null });
+    expect(computeAvailability({ ...base, stock: null, paidCount: 99 })).toEqual({
+      state: "available",
+      remaining: null,
+    });
   });
 
-  test("hidden takes precedence over unreleased", () => {
-    expect(
-      computeAvailability({
-        ...base,
-        status: "draft",
-        releaseAt: NOW + 1000,
-      }),
-    ).toEqual({ state: "hidden" });
+  test("hidden takes precedence over sold", () => {
+    expect(computeAvailability({ ...base, status: "draft", paidCount: 1 })).toEqual({
+      state: "hidden",
+    });
   });
 });

@@ -3,6 +3,8 @@ import { query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
 import { computeAvailability, type Availability } from "./lib/availability";
+import { countClaims } from "./lib/claims";
+import { normalizeMode, pieceTags, type SaleMode } from "./lib/pieceShape";
 
 export type PublicPiece = {
   _id: Id<"pieces">;
@@ -10,47 +12,27 @@ export type PublicPiece = {
   slug: string;
   description: string;
   size: string | null;
-  collection: "wildlife" | "heirloom" | "totems";
-  mode: "oneoff" | "madeToOrder" | "deposit" | "drop";
+  tags: string[];
+  mode: SaleMode;
   priceCents: number;
   leadTimeWeeks: number | null;
+  shippingTier: "plate" | "platter";
+  dimensions: { widthIn: number; heightIn: number; depthIn: number } | null;
+  weightOz: number | null;
+  foodSafe: boolean;
+  dishwasherSafe: boolean;
+  careNotes: string | null;
   imageUrls: string[];
   availability: Availability;
 };
 
-/**
- * Convex forbids unbounded `.collect()`. A single piece can never legitimately
- * accumulate more claims than a generous batch, so we bound the read and treat
- * exceeding it as sold out rather than silently undercounting.
- */
-const MAX_CLAIMS_PER_PIECE = 256;
-
 /** Pieces shown on the shop at once. Georgia's catalog is nowhere near this. */
 const MAX_PUBLISHED_PIECES = 200;
 
-/**
- * Counts the orders that consume stock: settled sales, plus checkouts that are
- * still live. An expired pending order holds nothing.
- */
-async function countClaims(ctx: QueryCtx, pieceId: Id<"pieces">, now: number) {
-  const orders = await ctx.db
-    .query("orders")
-    .withIndex("by_pieceId_and_status", (q) => q.eq("pieceId", pieceId))
-    .take(MAX_CLAIMS_PER_PIECE);
+/** The most pieces a cart may ask about at once. */
+const MAX_CART_LINES = 20;
 
-  let paidCount = 0;
-  let activeHoldCount = 0;
-  for (const order of orders) {
-    if (order.status === "paid" || order.status === "fulfilled") {
-      paidCount += 1;
-    } else if (order.status === "pending" && order.expiresAt > now) {
-      activeHoldCount += 1;
-    }
-  }
-  return { paidCount, activeHoldCount };
-}
-
-async function toPublicPiece(
+export async function toPublicPiece(
   ctx: QueryCtx,
   piece: Doc<"pieces">,
   now: number,
@@ -66,20 +48,33 @@ async function toPublicPiece(
     slug: piece.slug,
     description: piece.description,
     size: piece.size,
-    collection: piece.collection,
-    mode: piece.mode,
+    tags: pieceTags(piece),
+    mode: normalizeMode(piece.mode),
     priceCents: piece.priceCents,
     leadTimeWeeks: piece.leadTimeWeeks,
+    shippingTier: piece.shippingTier,
+    dimensions: piece.dimensions ?? null,
+    weightOz: piece.weightOz ?? null,
+    foodSafe: piece.foodSafe ?? false,
+    dishwasherSafe: piece.dishwasherSafe ?? false,
+    careNotes: piece.careNotes ?? null,
     imageUrls,
     availability: computeAvailability({
       status: piece.status,
       stock: piece.stock,
-      releaseAt: piece.releaseAt,
       paidCount,
       activeHoldCount,
-      now,
     }),
   };
+}
+
+/**
+ * Sold pieces stay on the grid as portfolio, but sink beneath everything
+ * still for sale. Within each group Georgia's sortOrder holds.
+ */
+function soldLast(pieces: PublicPiece[]): PublicPiece[] {
+  const rank = (p: PublicPiece) => (p.availability.state === "sold" ? 1 : 0);
+  return [...pieces].sort((a, b) => rank(a) - rank(b));
 }
 
 /**
@@ -92,7 +87,7 @@ async function toPublicPiece(
  * staying well inside the 30-minute hold window.
  *
  * This makes displayed availability advisory. That is correct: the authoritative
- * check happens in the reserve mutation (Plan 2), where `Date.now()` is allowed.
+ * check happens in the reserve mutation, where `Date.now()` is allowed.
  */
 export const listPublished = query({
   args: { now: v.number() },
@@ -103,8 +98,8 @@ export const listPublished = query({
       .order("asc")
       .take(MAX_PUBLISHED_PIECES);
 
-    return Promise.all(
-      pieces.map((piece) => toPublicPiece(ctx, piece, args.now)),
+    return soldLast(
+      await Promise.all(pieces.map((piece) => toPublicPiece(ctx, piece, args.now))),
     );
   },
 });
@@ -119,5 +114,22 @@ export const getBySlug = query({
 
     if (piece === null || piece.status !== "published") return null;
     return toPublicPiece(ctx, piece, args.now);
+  },
+});
+
+/**
+ * Hydrates a cart. Ids that no longer resolve to a published piece are
+ * dropped rather than erroring, so a stale cart heals itself on load.
+ */
+export const listByIds = query({
+  args: { ids: v.array(v.id("pieces")), now: v.number() },
+  handler: async (ctx, args) => {
+    const ids = args.ids.slice(0, MAX_CART_LINES);
+    const pieces = await Promise.all(ids.map((id) => ctx.db.get("pieces", id)));
+    const live = pieces.filter(
+      (piece): piece is Doc<"pieces"> =>
+        piece !== null && piece.status === "published",
+    );
+    return Promise.all(live.map((piece) => toPublicPiece(ctx, piece, args.now)));
   },
 });
