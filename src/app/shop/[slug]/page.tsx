@@ -9,6 +9,7 @@ import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { nowForCatalog } from "@/lib/catalog-time";
+import { fetchVisibleTags } from "@/lib/tags";
 import { formatDimensions, placeholderShape } from "@/lib/shop";
 import { site } from "@/lib/site";
 
@@ -43,7 +44,7 @@ export default async function PiecePage({ params }: Params) {
   const { slug } = await params;
   const [preloaded, tags] = await Promise.all([
     preloadQuery(api.pieces.getBySlug, { slug, now: nowForCatalog() }),
-    fetchQuery(api.tags.listVisible),
+    fetchVisibleTags(),
   ]);
   const piece = preloadedQueryResult(preloaded);
   if (!piece) notFound();

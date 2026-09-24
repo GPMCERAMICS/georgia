@@ -1,4 +1,4 @@
-import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
+import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import { About } from "@/components/site/about";
 import { Collections } from "@/components/site/collections";
@@ -8,6 +8,7 @@ import { JsonLd } from "@/components/site/json-ld";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { nowForCatalog } from "@/lib/catalog-time";
+import { fetchVisibleTags } from "@/lib/tags";
 
 // The collections section renders the live catalog, so the homepage is
 // request-rendered like /shop instead of a build-time snapshot.
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const [preloaded, tags] = await Promise.all([
     preloadQuery(api.pieces.listPublished, { now: nowForCatalog() }),
-    fetchQuery(api.tags.listVisible),
+    fetchVisibleTags(),
   ]);
   const pieces = preloadedQueryResult(preloaded);
   const featured = tags.filter((tag) => tag.featured);

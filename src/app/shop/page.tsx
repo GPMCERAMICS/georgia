@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
+import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import { ShopGrid } from "@/components/shop/shop-grid";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { nowForCatalog } from "@/lib/catalog-time";
+import { fetchVisibleTags } from "@/lib/tags";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default async function ShopPage({
 
   const [preloaded, tags] = await Promise.all([
     preloadQuery(api.pieces.listPublished, { now: nowForCatalog() }),
-    fetchQuery(api.tags.listVisible),
+    fetchVisibleTags(),
   ]);
   const pieces = preloadedQueryResult(preloaded);
   const activeTag = tags.find((tag) => tag.slug === requested);
