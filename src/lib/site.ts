@@ -44,35 +44,6 @@ export const site = {
   },
 } as const;
 
-/**
- * A shopping section on the homepage. The id matches the Convex piece
- * `collection` value, so each section renders the live catalog filtered to it
- * and its button links to the shop pre-filtered.
- */
-export type Collection = {
-  id: "wildlife" | "totems";
-  name: string;
-  tagline: string;
-};
-
-export const collections: Collection[] = [
-  {
-    id: "wildlife",
-    name: "Coastal Living",
-    tagline:
-      "Georgia's Golden Aisle sets the backdrop for coastal themed wildlife " +
-      "pieces of art. Handmade, hand painted and totally unique.",
-  },
-  {
-    id: "totems",
-    name: "Garden and Floral",
-    tagline:
-      "Colorful pieces to brighten up your indoor and outdoor space. Totems, " +
-      "vases and flower pots sculptured and painted by hand inspired by " +
-      "coastal wildlife.",
-  },
-];
-
 // The commissions section of the homepage and the /commissions page.
 export const commission = {
   eyebrow: "Heirloom & custom",

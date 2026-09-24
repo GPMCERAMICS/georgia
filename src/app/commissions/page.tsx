@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { fetchQuery } from "convex/nextjs";
+import { api } from "@convex/_generated/api";
 import { CommissionForm } from "@/components/site/commission-form";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { nowForCatalog } from "@/lib/catalog-time";
 import { commission, site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -10,7 +13,14 @@ export const metadata: Metadata = {
     "Commission a handmade, hand painted ceramic piece from Georgia Perkins — weddings, homes, anniversaries, and milestones.",
 };
 
-export default function CommissionsPage() {
+export default async function CommissionsPage(props: {
+  searchParams: Promise<{ piece?: string }>;
+}) {
+  const { piece: slug } = await props.searchParams;
+  const piece = slug
+    ? await fetchQuery(api.pieces.getBySlug, { slug, now: nowForCatalog() })
+    : null;
+
   return (
     <>
       <SiteHeader />
@@ -35,16 +45,13 @@ export default function CommissionsPage() {
           </ul>
           <p className="mt-6 text-sm text-muted-foreground">
             Prefer email?{" "}
-            <a
-              href={`mailto:${site.email}`}
-              className="text-primary underline underline-offset-4"
-            >
+            <a href={`mailto:${site.email}`} className="text-primary underline underline-offset-4">
               {site.email}
             </a>
           </p>
         </div>
 
-        <CommissionForm />
+        <CommissionForm piece={piece ? { id: piece._id, title: piece.title } : null} />
       </main>
       <SiteFooter />
     </>

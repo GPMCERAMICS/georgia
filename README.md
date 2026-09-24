@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Georgia Perkins Pottery
 
-## Getting Started
+A storefront and dashboard for one-of-a-kind ceramics. Next.js 16 on Vercel,
+Convex for the database, auth, file storage, and scheduled jobs, Stripe
+Checkout for payment, Resend for email.
 
-First, run the development server:
+- `docs/superpowers/plans/2026-09-24-shop-checkout-dashboard.md` — the
+  current plan, locked decisions, and data model.
+- `docs/superpowers/specs/` — earlier design notes.
+
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.local.example .env.local   # fill in the values it describes
+npx convex dev                      # provisions/connects a dev deployment
+npm run dev                         # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Set the backend variables on the Convex deployment, not in `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx convex env set ADMIN_EMAIL you@example.com
+npx convex env set STRIPE_SECRET_KEY sk_test_…
+npx convex env set STRIPE_WEBHOOK_SECRET whsec_…
+npx convex env set RESEND_API_KEY re_…
+npx convex env set RESEND_FROM_EMAIL "Georgia Perkins Pottery <onboarding@resend.dev>"
+npx convex env set SITE_URL http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Seed starter data, then sign in at `/admin/signin` and create your password:
 
-## Learn More
+```bash
+npx convex run admin/seed:tags     # the starter tags and default settings
+npx convex run admin/seed:demo     # a dozen sample pieces (optional)
+```
 
-To learn more about Next.js, take a look at the following resources:
+For Stripe webhooks in development, forward events to your dev deployment:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+stripe listen --forward-to https://<dev-deployment>.convex.site/stripe/webhook
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+and set the `whsec_…` it prints as `STRIPE_WEBHOOK_SECRET`.
 
-## Deploy on Vercel
+## Checks
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm test          # convex-test + vitest
+npm run lint
+npx tsc --noEmit
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How it fits together
+
+- **Catalog** lives in Convex (`pieces`, `tags`). Availability is derived
+  from stock and live order items, never stored.
+- **Cart** is a list of piece ids in the browser. Checkout reserves every
+  line in one Convex transaction, then hands off to Stripe Checkout.
+- **Webhook** at `/stripe/webhook` on the Convex site URL settles orders and
+  sends email. A cron expires abandoned holds every five minutes.
+- **Dashboard** at `/admin`: Overview, Orders, Pieces, Tags, Inquiries,
+  Customers, Settings. Gated by an email allowlist (`ADMIN_EMAIL`).
+
+## Launch checklist
+
+- [ ] Verify a sending domain in Resend and set `RESEND_FROM_EMAIL` to it
+- [ ] Set every Convex env var above on the **production** deployment
+- [ ] Add the production webhook endpoint in Stripe for
+      `checkout.session.completed`, `checkout.session.expired`, `charge.refunded`
+- [ ] `npx convex run admin/maintenance:migrateLegacyCatalog --prod` once,
+      if the production catalog predates tags
+- [ ] `npx convex run admin/seed:tags --prod`
+- [ ] Fill real shipping rates and pickup details in Settings
+- [ ] Decide on sales tax; register in Stripe and flip the Settings toggle if collecting
+- [ ] Swap Stripe test keys for live keys

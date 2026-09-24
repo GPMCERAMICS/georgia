@@ -8,20 +8,6 @@ export const formatPrice = (cents: number) =>
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
   }).format(cents / 100);
 
-export const releaseDateLabel = (ms: number) =>
-  new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(ms);
-
-export const collectionLabel: Record<PublicPiece["collection"], string> = {
-  wildlife: "Coastal Living",
-  heirloom: "Heirloom",
-  totems: "Garden and Floral",
-};
-
 /**
  * The one line under a price that says whether — and how — a piece can be
  * bought. Shared by the shop card and the detail page so they can never
@@ -31,18 +17,15 @@ export function availabilityLine(piece: PublicPiece): string {
   switch (piece.availability.state) {
     case "sold":
       return "Sold";
-    case "unreleased":
-      return `Drops ${releaseDateLabel(piece.availability.releaseAt)}`;
     case "available":
       if (piece.mode === "madeToOrder") {
         return piece.leadTimeWeeks
           ? `Made to order — ships in ~${piece.leadTimeWeeks} week${piece.leadTimeWeeks === 1 ? "" : "s"}`
           : "Made to order";
       }
-      if (piece.mode === "deposit") return "Commission deposit";
       if (piece.availability.remaining !== null && piece.availability.remaining <= 3) {
         return piece.availability.remaining === 1
-          ? "Last one"
+          ? "One of a kind"
           : `Only ${piece.availability.remaining} left`;
       }
       return "Available";
@@ -56,4 +39,9 @@ export function placeholderShape(slug: string): 0 | 1 | 2 | 3 {
   let hash = 0;
   for (const ch of slug) hash = (hash * 31 + ch.charCodeAt(0)) | 0;
   return (Math.abs(hash) % 4) as 0 | 1 | 2 | 3;
+}
+
+/** Inches, shown as W × H × D. */
+export function formatDimensions(d: { widthIn: number; heightIn: number; depthIn: number }): string {
+  return `${d.widthIn}" × ${d.heightIn}" × ${d.depthIn}"`;
 }

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { CartDrawer } from "@/components/shop/cart-drawer";
+import { CartProvider } from "@/components/shop/cart-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { site } from "@/lib/site";
 import { ConvexClientProvider } from "./ConvexClientProvider";
@@ -61,8 +63,11 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ConvexClientProvider>
-          {children}
-          <Toaster />
+          <CartProvider>
+            {children}
+            <CartDrawer />
+            <Toaster />
+          </CartProvider>
         </ConvexClientProvider>
       </body>
     </html>

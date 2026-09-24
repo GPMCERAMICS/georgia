@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CartButton } from "@/components/shop/cart-button";
 import { Button } from "@/components/ui/button";
 import { Logo } from "./logo";
 
@@ -38,9 +39,12 @@ export function SiteHeader() {
             ))}
           </nav>
 
-          <Button asChild size="sm" className="rounded-full px-5">
-            <Link href="/shop">Shop</Link>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button asChild size="sm" className="rounded-full px-5">
+              <Link href="/shop">Shop</Link>
+            </Button>
+            <CartButton />
+          </div>
         </div>
       </div>
     </header>

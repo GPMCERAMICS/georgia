@@ -1,5 +1,5 @@
-import { PiecesTable } from "@/components/admin/pieces-table";
+import { Overview } from "@/components/admin/overview";
 
 export default function AdminHomePage() {
-  return <PiecesTable />;
+  return <Overview />;
 }

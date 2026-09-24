@@ -1,11 +1,10 @@
 import type { PublicPiece } from "@convex/pieces";
-import { collectionLabel } from "@/lib/shop";
+import type { PublicTag } from "@convex/tags";
 import { site } from "@/lib/site";
 
 const schemaAvailability = {
   available: "https://schema.org/InStock",
   sold: "https://schema.org/SoldOut",
-  unreleased: "https://schema.org/PreOrder",
   hidden: "https://schema.org/OutOfStock",
 } as const;
 
@@ -14,7 +13,8 @@ const schemaAvailability = {
  * each Product entry points at its live shop page, which carries the full
  * Product markup of its own.
  */
-export function JsonLd({ pieces }: { pieces: PublicPiece[] }) {
+export function JsonLd({ pieces, tags }: { pieces: PublicPiece[]; tags: PublicTag[] }) {
+  const tagName = new Map(tags.map((tag) => [tag.slug, tag.name]));
   const graph = [
     {
       "@type": "LocalBusiness",
@@ -34,7 +34,7 @@ export function JsonLd({ pieces }: { pieces: PublicPiece[] }) {
       "@id": `${site.url}/shop/${piece.slug}`,
       name: piece.title,
       description: piece.description,
-      category: collectionLabel[piece.collection],
+      category: piece.tags.map((slug) => tagName.get(slug) ?? slug).join(", ") || undefined,
       image: piece.imageUrls.slice(0, 1),
       brand: { "@type": "Brand", name: site.name },
       offers: {

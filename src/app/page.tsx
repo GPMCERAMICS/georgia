@@ -1,4 +1,4 @@
-import { preloadQuery, preloadedQueryResult } from "convex/nextjs";
+import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
 import { About } from "@/components/site/about";
 import { Collections } from "@/components/site/collections";
@@ -14,18 +14,20 @@ import { nowForCatalog } from "@/lib/catalog-time";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const preloaded = await preloadQuery(api.pieces.listPublished, {
-    now: nowForCatalog(),
-  });
+  const [preloaded, tags] = await Promise.all([
+    preloadQuery(api.pieces.listPublished, { now: nowForCatalog() }),
+    fetchQuery(api.tags.listVisible),
+  ]);
   const pieces = preloadedQueryResult(preloaded);
+  const featured = tags.filter((tag) => tag.featured);
 
   return (
     <>
-      <JsonLd pieces={pieces} />
+      <JsonLd pieces={pieces} tags={tags} />
       <SiteHeader />
       <main>
         <Hero />
-        <Collections preloaded={preloaded} />
+        <Collections preloaded={preloaded} tags={featured} />
         <About />
         <Commission />
       </main>

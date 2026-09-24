@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
@@ -8,7 +9,7 @@ import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { nowForCatalog } from "@/lib/catalog-time";
-import { collectionLabel, placeholderShape } from "@/lib/shop";
+import { formatDimensions, placeholderShape } from "@/lib/shop";
 import { site } from "@/lib/site";
 
 // Availability is time- and order-dependent; never serve a build-time snapshot.
@@ -18,10 +19,7 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const piece = await fetchQuery(api.pieces.getBySlug, {
-    slug,
-    now: nowForCatalog(),
-  });
+  const piece = await fetchQuery(api.pieces.getBySlug, { slug, now: nowForCatalog() });
   if (!piece) return { title: "Piece not found" };
 
   return {
@@ -38,20 +36,27 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 const schemaAvailability = {
   available: "https://schema.org/InStock",
   sold: "https://schema.org/SoldOut",
-  unreleased: "https://schema.org/PreOrder",
   hidden: "https://schema.org/OutOfStock",
 } as const;
 
 export default async function PiecePage({ params }: Params) {
   const { slug } = await params;
-  const preloaded = await preloadQuery(api.pieces.getBySlug, {
-    slug,
-    now: nowForCatalog(),
-  });
+  const [preloaded, tags] = await Promise.all([
+    preloadQuery(api.pieces.getBySlug, { slug, now: nowForCatalog() }),
+    fetchQuery(api.tags.listVisible),
+  ]);
   const piece = preloadedQueryResult(preloaded);
   if (!piece) notFound();
 
   const [mainImage, ...restImages] = piece.imageUrls;
+  const pieceTags = tags.filter((tag) => piece.tags.includes(tag.slug));
+
+  const details: { label: string; value: string }[] = [];
+  if (piece.size) details.push({ label: "Size", value: piece.size });
+  if (piece.dimensions) details.push({ label: "Dimensions", value: formatDimensions(piece.dimensions) });
+  if (piece.foodSafe) details.push({ label: "Food safe", value: "Yes" });
+  if (piece.dishwasherSafe) details.push({ label: "Dishwasher", value: "Safe" });
+  if (piece.careNotes) details.push({ label: "Care", value: piece.careNotes });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -60,6 +65,7 @@ export default async function PiecePage({ params }: Params) {
     description: piece.description,
     image: piece.imageUrls,
     brand: { "@type": "Brand", name: site.name },
+    category: pieceTags.map((tag) => tag.name).join(", ") || undefined,
     offers: {
       "@type": "Offer",
       url: `${site.url}/shop/${piece.slug}`,
@@ -118,9 +124,19 @@ export default async function PiecePage({ params }: Params) {
           </div>
 
           <div className="flex flex-col items-start">
-            <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-              {collectionLabel[piece.collection]}
-            </p>
+            {pieceTags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pieceTags.map((tag) => (
+                  <Link
+                    key={tag.slug}
+                    href={`/shop?tag=${tag.slug}`}
+                    className="rounded-full border border-border px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {tag.name}
+                  </Link>
+                ))}
+              </div>
+            )}
             <h1 className="mt-4 text-balance font-display text-4xl leading-tight md:text-5xl">
               {piece.title}
             </h1>
@@ -137,6 +153,17 @@ export default async function PiecePage({ params }: Params) {
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
+
+            {details.length > 0 && (
+              <dl className="mt-10 w-full max-w-prose divide-y divide-border border-y border-border text-sm">
+                {details.map((detail) => (
+                  <div key={detail.label} className="grid grid-cols-[120px_1fr] gap-4 py-3">
+                    <dt className="text-muted-foreground">{detail.label}</dt>
+                    <dd>{detail.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
         </div>
       </main>

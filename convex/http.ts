@@ -29,7 +29,10 @@ http.route({
         payload,
         signature,
       });
-      return Response.json({ received: true, ...result });
+      return new Response(JSON.stringify({ received: true, ...result }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     } catch (error) {
       console.error("stripe webhook rejected", error);
       return new Response("Webhook error", { status: 400 });

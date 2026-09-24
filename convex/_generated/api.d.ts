@@ -29,6 +29,7 @@ import type * as lib_adminGuard from "../lib/adminGuard.js";
 import type * as lib_availability from "../lib/availability.js";
 import type * as lib_claims from "../lib/claims.js";
 import type * as lib_pieceShape from "../lib/pieceShape.js";
+import type * as lib_resendOtp from "../lib/resendOtp.js";
 import type * as lib_shipping from "../lib/shipping.js";
 import type * as orders from "../orders.js";
 import type * as pieces from "../pieces.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "lib/availability": typeof lib_availability;
   "lib/claims": typeof lib_claims;
   "lib/pieceShape": typeof lib_pieceShape;
+  "lib/resendOtp": typeof lib_resendOtp;
   "lib/shipping": typeof lib_shipping;
   orders: typeof orders;
   pieces: typeof pieces;

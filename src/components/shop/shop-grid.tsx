@@ -1,13 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useQuery,
-  usePreloadedQuery,
-  type Preloaded,
-} from "convex/react";
+import { useQuery, usePreloadedQuery, type Preloaded } from "convex/react";
 import { api } from "@convex/_generated/api";
-import type { PublicPiece } from "@convex/pieces";
 import { Button } from "@/components/ui/button";
 import { ShopPieceCard } from "./shop-piece-card";
 import { useCatalogNow } from "./use-catalog-now";
@@ -15,31 +10,28 @@ import { useCatalogNow } from "./use-catalog-now";
 /**
  * The catalog grid. Server-rendered from the preloaded query for real HTML,
  * then live: the preloaded subscription flips cards the moment an order lands,
- * and a minute tick re-queries with fresh `now` so drops release on time
- * without a refresh.
+ * and a minute tick re-queries with fresh `now` so expired holds release on
+ * time without a refresh.
  */
 export function ShopGrid({
   preloaded,
-  collection,
+  tag,
 }: {
   preloaded: Preloaded<typeof api.pieces.listPublished>;
-  collection?: PublicPiece["collection"];
+  tag?: string;
 }) {
   const initial = usePreloadedQuery(preloaded);
   const now = useCatalogNow();
-  const live = useQuery(
-    api.pieces.listPublished,
-    now === null ? "skip" : { now },
-  );
+  const live = useQuery(api.pieces.listPublished, now === null ? "skip" : { now });
 
   const pieces = (live ?? initial).filter(
-    (piece) => collection === undefined || piece.collection === collection,
+    (piece) => tag === undefined || piece.tags.includes(tag),
   );
 
-  if (pieces.length === 0 && collection !== undefined) {
+  if (pieces.length === 0 && tag !== undefined) {
     return (
       <p className="text-muted-foreground">
-        No pieces in this collection yet — new work is on the way.
+        Nothing under this tag yet — new work is on the way.
       </p>
     );
   }
