@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
+import { HOLD_MINUTES } from "@convex/lib/hold";
 import { computeShippingCents } from "@convex/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
@@ -26,8 +27,23 @@ export function CartCheckout() {
   const lines = useCartLines();
   const options = useQuery(api.settings.shippingOptions);
   const start = useAction(api.checkout.start);
+  const cancel = useAction(api.checkout.cancel);
   const [method, setMethod] = useState<Method>("ship");
   const [starting, setStarting] = useState(false);
+
+  // Stripe's back link lands here with the abandoned order; free its pieces
+  // now rather than at the end of the hold. Read from `window` rather than
+  // useSearchParams so the page can stay static.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const orderId = url.searchParams.get("cancelled");
+    if (!orderId) return;
+    url.searchParams.delete("cancelled");
+    window.history.replaceState(null, "", url);
+    void cancel({ orderId }).catch(() => {
+      // The scheduled release still frees the pieces at the hold deadline.
+    });
+  }, [cancel]);
 
   if (lines === undefined || options === undefined) {
     return <p className="text-muted-foreground">Loading your cart…</p>;
@@ -74,6 +90,7 @@ export function CartCheckout() {
       <ul className="divide-y divide-border">
         {lines.map((piece) => {
           const sold = piece.availability.state !== "available";
+          const held = piece.availability.state === "held";
           return (
             <li key={piece._id} className="flex gap-5 py-5">
               <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-xl border border-border bg-card">
@@ -96,7 +113,11 @@ export function CartCheckout() {
                   <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{piece.size}</p>
                 )}
                 <p className={cn("mt-2 text-sm", sold ? "text-destructive" : "text-muted-foreground")}>
-                  {sold ? "This piece just sold. Remove it to continue." : availabilityLine(piece)}
+                  {held
+                    ? `Someone else is checking out with this piece. It comes back within ${HOLD_MINUTES} minutes if they don't buy it.`
+                    : sold
+                      ? "This piece just sold. Remove it to continue."
+                      : availabilityLine(piece)}
                 </p>
                 <button
                   type="button"
@@ -185,7 +206,7 @@ export function CartCheckout() {
         </Button>
         {blocked > 0 && (
           <p className="mt-2 text-xs text-destructive">
-            Remove the sold piece{blocked === 1 ? "" : "s"} to continue.
+            Remove the unavailable piece{blocked === 1 ? "" : "s"} to continue.
           </p>
         )}
         <button
@@ -196,7 +217,7 @@ export function CartCheckout() {
           Empty cart
         </button>
         <p className="mt-4 text-xs text-muted-foreground">
-          Your pieces are held for 35 minutes once you start checkout. Payment is handled securely by Stripe.
+          Your pieces are held for {HOLD_MINUTES} minutes once you start checkout. Payment is handled securely by Stripe.
         </p>
       </aside>
     </div>

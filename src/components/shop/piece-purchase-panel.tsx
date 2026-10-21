@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery, usePreloadedQuery, type Preloaded } from "convex/react";
 import { Check } from "lucide-react";
 import { api } from "@convex/_generated/api";
+import { HOLD_MINUTES } from "@convex/lib/hold";
 import { Button } from "@/components/ui/button";
 import { availabilityLine, formatPrice } from "@/lib/shop";
 import { useCart } from "./cart-provider";
@@ -14,7 +15,7 @@ import { useCatalogNow } from "./use-catalog-now";
  *
  * Live for the same reasons as the grid: order writes flip "Sold" instantly
  * via the subscription. A sold one-off becomes a commission reference — the
- * piece stays, the button changes.
+ * piece stays, the button changes. A held one shows that it may come back.
  */
 export function PiecePurchasePanel({
   preloaded,
@@ -34,13 +35,14 @@ export function PiecePurchasePanel({
   if (!piece) return null;
 
   const sold = piece.availability.state === "sold";
+  const held = piece.availability.state === "held";
   const inCart = cart.has(piece._id);
   const line = availabilityLine(piece);
 
   return (
     <div className="mt-8">
       <p className="font-display text-3xl text-primary">{formatPrice(piece.priceCents)}</p>
-      {line && <p className="mt-2 text-sm font-medium text-muted-foreground">{line}</p>}
+      {line && !held && <p className="mt-2 text-sm font-medium text-muted-foreground">{line}</p>}
 
       <div className="mt-6 flex flex-col items-start gap-3">
         {sold ? (
@@ -50,6 +52,20 @@ export function PiecePurchasePanel({
             </Button>
             <p className="text-sm text-muted-foreground">
               This piece has found a home. Georgia can make something in the same spirit, made just for you.
+            </p>
+          </>
+        ) : held ? (
+          <>
+            <div className="flex flex-wrap gap-3">
+              <Button disabled className="rounded-full px-6">
+                On hold
+              </Button>
+              <Button asChild variant="outline" className="rounded-full px-6">
+                <Link href={`/commissions?piece=${piece.slug}`}>Ask about a custom version</Link>
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Someone is checking out with this piece. If they don&apos;t finish within {HOLD_MINUTES} minutes, it goes back on sale here.
             </p>
           </>
         ) : inCart ? (

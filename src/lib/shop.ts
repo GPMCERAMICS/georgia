@@ -17,6 +17,8 @@ export function availabilityLine(piece: PublicPiece): string {
   switch (piece.availability.state) {
     case "sold":
       return "Sold";
+    case "held":
+      return "In someone's checkout. If it isn't bought, it'll be back shortly.";
     case "available":
       if (piece.mode === "madeToOrder") {
         return piece.leadTimeWeeks

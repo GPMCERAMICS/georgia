@@ -35,9 +35,9 @@ describe("computeAvailability", () => {
     });
   });
 
-  test("a one-off held by an in-progress checkout is sold to everyone else", () => {
+  test("a one-off in an in-progress checkout is held, not sold", () => {
     expect(computeAvailability({ ...base, activeHoldCount: 1 })).toEqual({
-      state: "sold",
+      state: "held",
     });
   });
 
@@ -47,9 +47,15 @@ describe("computeAvailability", () => {
     ).toEqual({ state: "available", remaining: 2 });
   });
 
-  test("fully claimed stock is sold", () => {
+  test("stock whose last unit is in a checkout is held", () => {
     expect(
       computeAvailability({ ...base, stock: 5, paidCount: 4, activeHoldCount: 1 }),
+    ).toEqual({ state: "held" });
+  });
+
+  test("fully paid stock is sold even with a stray hold", () => {
+    expect(
+      computeAvailability({ ...base, stock: 5, paidCount: 5, activeHoldCount: 1 }),
     ).toEqual({ state: "sold" });
   });
 

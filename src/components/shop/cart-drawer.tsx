@@ -70,6 +70,7 @@ export function CartDrawer() {
             <ul className="divide-y divide-border">
               {lines.map((piece) => {
                 const sold = piece.availability.state !== "available";
+                const held = piece.availability.state === "held";
                 return (
                   <li key={piece._id} className="flex gap-4 py-4">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-card">
@@ -84,7 +85,11 @@ export function CartDrawer() {
                         {piece.title}
                       </Link>
                       <span className={cn("text-sm", sold ? "text-destructive" : "text-muted-foreground")}>
-                        {sold ? "Just sold — remove to continue" : formatPrice(piece.priceCents)}
+                        {held
+                          ? "On hold in another checkout"
+                          : sold
+                            ? "Just sold — remove to continue"
+                            : formatPrice(piece.priceCents)}
                       </span>
                       <button
                         type="button"

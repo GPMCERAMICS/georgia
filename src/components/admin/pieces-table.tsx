@@ -28,6 +28,7 @@ function AvailabilityBadge({ piece }: { piece: AdminPiece }) {
   if (piece.status !== "published") return null;
   const a = piece.availability;
   if (a.state === "sold") return <Badge variant="destructive">Sold</Badge>;
+  if (a.state === "held") return <Badge variant="warning">In checkout</Badge>;
   if (a.state === "available") {
     return (
       <Badge variant="success">

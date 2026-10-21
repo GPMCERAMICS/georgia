@@ -2,8 +2,11 @@
 
 import Stripe from "stripe";
 import { v } from "convex/values";
-import { action } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
+import type { ActionCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
+import { STRIPE_SESSION_MS } from "./lib/hold";
 import { shippingMethod } from "./schema";
 
 function stripeClient() {
@@ -23,6 +26,8 @@ export function siteUrl(): string {
  * 2. Create the Checkout Session with inline prices — Stripe never holds a
  *    catalog, so there is nothing to keep in sync.
  * 3. Record the session id on the order so the webhook can find it.
+ * 4. Schedule the hold's release. Stripe sessions must live 30 minutes, so the
+ *    session is closed early at the (shorter) hold deadline instead.
  *
  * If Stripe refuses the session the hold is released immediately rather than
  * left to time out.
@@ -72,14 +77,14 @@ export const start = action({
           },
         ],
         automatic_tax: { enabled: reserved.taxEnabled },
-        expires_at: Math.floor(reserved.expiresAt / 1000),
+        expires_at: Math.floor((Date.now() + STRIPE_SESSION_MS) / 1000),
         client_reference_id: reserved.orderNumber,
         metadata: { orderId: reserved.orderId, orderNumber: reserved.orderNumber },
         payment_intent_data: {
           metadata: { orderId: reserved.orderId, orderNumber: reserved.orderNumber },
         },
         success_url: `${base}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${base}/cart`,
+        cancel_url: `${base}/cart?cancelled=${reserved.orderId}`,
       });
 
       if (!session.url) throw new Error("Stripe did not return a checkout URL");
@@ -88,11 +93,68 @@ export const start = action({
         orderId: reserved.orderId,
         stripeSessionId: session.id,
       });
+      await ctx.scheduler.runAt(reserved.expiresAt, internal.checkout.releaseCheckout, {
+        orderId: reserved.orderId,
+      });
 
       return { url: session.url };
     } catch (error) {
       await ctx.runMutation(internal.orders.cancelPending, { orderId: reserved.orderId });
       throw error;
     }
+  },
+});
+
+/**
+ * Closes a checkout that was never paid and puts its pieces back on sale.
+ *
+ * Expiring the Stripe session first matters: once the pieces are free someone
+ * else can buy them, so the abandoned session must not still be payable. If
+ * Stripe reports the session already complete, the buyer paid at the wire and
+ * the webhook will mark the order paid; the hold is left alone.
+ */
+async function closeCheckout(ctx: ActionCtx, orderId: Id<"orders">) {
+  const order = await ctx.runQuery(internal.orders.checkoutState, { orderId });
+  if (!order || (order.status !== "pending" && order.status !== "expired")) return;
+
+  if (order.stripeSessionId) {
+    const stripe = stripeClient();
+    const session = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+    if (session.status === "complete") return;
+    if (session.status === "open") {
+      try {
+        await stripe.checkout.sessions.expire(order.stripeSessionId);
+      } catch (error) {
+        const latest = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+        if (latest.status !== "expired") throw error;
+      }
+    }
+  }
+
+  await ctx.runMutation(internal.orders.expireHold, { orderId });
+}
+
+/** Runs at the hold deadline, and from the cron backstop. */
+export const releaseCheckout = internalAction({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    await closeCheckout(ctx, args.orderId);
+    return null;
+  },
+});
+
+/**
+ * The shopper backed out of Stripe (its cancel link returns to the cart).
+ * There is no reason to make everyone else wait out the hold.
+ */
+export const cancel = action({
+  args: { orderId: v.string() },
+  handler: async (ctx, args) => {
+    // The id arrives from a URL, so it is validated rather than trusted.
+    const orderId = await ctx.runQuery(internal.orders.normalizeOrderId, {
+      orderId: args.orderId,
+    });
+    if (orderId) await closeCheckout(ctx, orderId);
+    return null;
   },
 });

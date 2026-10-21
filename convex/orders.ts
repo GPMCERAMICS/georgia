@@ -5,17 +5,12 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { computeAvailability } from "./lib/availability";
 import { countClaims } from "./lib/claims";
+import { HOLD_MS } from "./lib/hold";
 import { computeShippingCents } from "./lib/shipping";
 import { ensureSettings, getSettings } from "./settings";
 import { shippingAddress, shippingMethod } from "./schema";
 
-/**
- * How long a checkout holds its pieces. Stripe requires a Checkout Session to
- * live at least 30 minutes from creation, and the session is created a moment
- * after the hold, so the hold is a little longer than that minimum.
- */
-export const HOLD_MINUTES = 35;
-export const HOLD_MS = HOLD_MINUTES * 60_000;
+export { HOLD_MINUTES, HOLD_MS } from "./lib/hold";
 
 /**
  * The cron only expires a hold this long after its deadline, so a webhook
@@ -95,6 +90,11 @@ export const reserve = internalMutation({
         paidCount,
         activeHoldCount,
       });
+      if (availability.state === "held") {
+        throw new Error(
+          `Someone is checking out with "${piece.title}" right now. If they don't finish, it will be back shortly.`,
+        );
+      }
       if (availability.state !== "available") {
         throw new Error(`"${piece.title}" has just sold. It has been removed from your cart.`);
       }
@@ -237,6 +237,33 @@ export const markPaid = internalMutation({
   },
 });
 
+/** An order id from a URL, or null if it is not one. */
+export const normalizeOrderId = internalQuery({
+  args: { orderId: v.string() },
+  handler: async (ctx, args) => ctx.db.normalizeId("orders", args.orderId),
+});
+
+/** What the hold-release action needs to close a checkout at Stripe. */
+export const checkoutState = internalQuery({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("orders", args.orderId);
+    if (!order) return null;
+    return { status: order.status, stripeSessionId: order.stripeSessionId };
+  },
+});
+
+/** Ends a hold once its Stripe session can no longer be paid. */
+export const expireHold = internalMutation({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("orders", args.orderId);
+    if (!order || order.status !== "pending") return null;
+    await setOrderStatus(ctx, args.orderId, "expired");
+    return null;
+  },
+});
+
 export const markExpired = internalMutation({
   args: { stripeSessionId: v.string() },
   handler: async (ctx, args) => {
@@ -262,7 +289,11 @@ export const markRefunded = internalMutation({
   },
 });
 
-/** Cron backstop for a missed `checkout.session.expired` webhook. */
+/**
+ * Cron backstop for a hold whose scheduled release never ran. Frees the pieces
+ * here, then still asks Stripe to close the session so the abandoned checkout
+ * cannot be paid for after someone else buys the piece.
+ */
 export const expireStaleHolds = internalMutation({
   args: {},
   handler: async (ctx) => {
@@ -275,6 +306,9 @@ export const expireStaleHolds = internalMutation({
     for (const order of pending) {
       if (order.expiresAt < cutoff) {
         await setOrderStatus(ctx, order._id, "expired");
+        await ctx.scheduler.runAfter(0, internal.checkout.releaseCheckout, {
+          orderId: order._id,
+        });
         expired += 1;
       }
     }

@@ -8,6 +8,8 @@
 export type Availability =
   | { state: "hidden" }
   | { state: "sold" }
+  /** Every unit is in someone's in-progress checkout; back on sale if it lapses. */
+  | { state: "held" }
   | { state: "available"; remaining: number | null };
 
 export type AvailabilityInput = {
@@ -29,6 +31,11 @@ export function computeAvailability(input: AvailabilityInput): Availability {
     return { state: "available", remaining: null };
   }
 
-  const remaining = input.stock - input.paidCount - input.activeHoldCount;
-  return remaining > 0 ? { state: "available", remaining } : { state: "sold" };
+  const unpaid = input.stock - input.paidCount;
+  if (unpaid <= 0) {
+    return { state: "sold" };
+  }
+
+  const remaining = unpaid - input.activeHoldCount;
+  return remaining > 0 ? { state: "available", remaining } : { state: "held" };
 }

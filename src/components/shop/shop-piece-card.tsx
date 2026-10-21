@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 export function ShopPieceCard({ piece }: { piece: PublicPiece }) {
   const sold = piece.availability.state === "sold";
+  const held = piece.availability.state === "held";
   const line = availabilityLine(piece);
 
   return (
@@ -43,9 +44,9 @@ export function ShopPieceCard({ piece }: { piece: PublicPiece }) {
               className="h-full w-full transition-transform duration-500 group-hover:scale-[1.04]"
             />
           )}
-          {sold && (
+          {(sold || held) && (
             <span className="absolute left-4 top-4 rounded-full bg-foreground/85 px-3 py-1 text-xs font-medium uppercase tracking-wider text-background">
-              Sold
+              {sold ? "Sold" : "On hold"}
             </span>
           )}
         </div>
