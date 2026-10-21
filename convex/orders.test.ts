@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { convexTest } from "convex-test";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import schema from "./schema";
 import { api, internal } from "./_generated/api";
 import { pieceFields } from "./pieces.test";
@@ -29,7 +29,7 @@ describe("orders.reserve", () => {
     expect(reserved.shippingCents).toBe(2500);
 
     const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
-    expect(pieces.every((p) => p.availability.state === "sold")).toBe(true);
+    expect(pieces.every((p) => p.availability.state === "held")).toBe(true);
   });
 
   test("order numbers advance", async () => {
@@ -50,7 +50,7 @@ describe("orders.reserve", () => {
     await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" });
     await expect(
       t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" }),
-    ).rejects.toThrow("just sold");
+    ).rejects.toThrow("checking out");
   });
 
   test("all or nothing: one sold line rejects the whole cart", async () => {
@@ -191,7 +191,37 @@ describe("order lifecycle", () => {
     expect(pieces[0].availability).toEqual({ state: "available", remaining: 1 });
   });
 
+  test("expireHold puts an abandoned checkout's piece back on sale", async () => {
+    const t = convexTest(schema, modules);
+    const { orderId } = await reservedOrder(t);
+    await t.mutation(internal.orders.expireHold, { orderId });
+    const order = await t.run(async (ctx) => ctx.db.get("orders", orderId));
+    expect(order?.status).toBe("expired");
+    const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
+    expect(pieces[0].availability).toEqual({ state: "available", remaining: 1 });
+  });
+
+  test("expireHold never touches a paid order", async () => {
+    const t = convexTest(schema, modules);
+    const { orderId } = await reservedOrder(t);
+    await t.mutation(internal.orders.markPaid, paidArgs);
+    await t.mutation(internal.orders.expireHold, { orderId });
+    const order = await t.run(async (ctx) => ctx.db.get("orders", orderId));
+    expect(order?.status).toBe("paid");
+  });
+
+  test("normalizeOrderId rejects strings that are not order ids", async () => {
+    const t = convexTest(schema, modules);
+    const { orderId } = await reservedOrder(t);
+    expect(await t.query(internal.orders.normalizeOrderId, { orderId })).toBe(orderId);
+    expect(
+      await t.query(internal.orders.normalizeOrderId, { orderId: "not-an-id" }),
+    ).toBeNull();
+  });
+
   test("expireStaleHolds only sweeps holds past the grace period", async () => {
+    // The sweep schedules a Stripe call; fake timers keep it queued, not run.
+    vi.useFakeTimers();
     const t = convexTest(schema, modules);
     const { orderId } = await reservedOrder(t);
 
@@ -204,5 +234,6 @@ describe("order lifecycle", () => {
     expect(await t.mutation(internal.orders.expireStaleHolds, {})).toEqual({ expired: 1 });
     const order = await t.run(async (ctx) => ctx.db.get("orders", orderId));
     expect(order?.status).toBe("expired");
+    vi.useRealTimers();
   });
 });

@@ -37,6 +37,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 const schemaAvailability = {
   available: "https://schema.org/InStock",
   sold: "https://schema.org/SoldOut",
+  held: "https://schema.org/LimitedAvailability",
   hidden: "https://schema.org/OutOfStock",
 } as const;
 
