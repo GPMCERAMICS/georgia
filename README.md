@@ -63,6 +63,15 @@ npm run build
 - **Dashboard** at `/admin`: Overview, Orders, Pieces, Tags, Inquiries,
   Customers, Settings. Gated by an email allowlist (`ADMIN_EMAIL`).
 
+## Deploying
+
+Merging to `main` deploys everything: Vercel's production build runs
+`npx convex deploy` first (see `vercel.json`), then builds the site against
+the freshly deployed functions. This needs `CONVEX_DEPLOY_KEY` (a production
+deploy key from the Convex dashboard) set in Vercel for **Production only**.
+Preview builds skip the Convex deploy, so an unmerged branch can never
+change the live backend.
+
 ## Launch checklist
 
 - [ ] Verify a sending domain in Resend and set `RESEND_FROM_EMAIL` to it
