@@ -4,6 +4,7 @@ import { Logo } from "./logo";
 
 export function SiteFooter() {
   const year = 2026; // static to keep the page fully server-cacheable
+  const domain = new URL(site.url).hostname.replace(/^www\./, "");
 
   return (
     <footer className="mt-auto border-t border-border/60">
@@ -80,7 +81,7 @@ export function SiteFooter() {
 
       <div className="border-t border-border/60">
         <div className="mx-auto max-w-6xl px-6 py-5 text-xs text-muted-foreground">
-          &copy; {year} {site.name}. Each piece made by hand.
+          &copy; {year} {domain}. Each piece made by hand.
         </div>
       </div>
     </footer>
