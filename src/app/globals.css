@@ -54,27 +54,27 @@
 }
 
 /*
- * Georgia Perkins Pottery — warm, earthy, gallery palette.
- * Cream ground, espresso ink, terracotta primary, sage + ochre accents.
+ * Georgia Perkins Pottery — white ground, near-black ink, navy primary.
+ * Square corners everywhere (see the border-radius rule in the base layer).
  */
 :root {
-  --background: oklch(0.968 0.012 84);
-  --foreground: oklch(0.285 0.028 52);
-  --card: oklch(0.985 0.009 86);
-  --card-foreground: oklch(0.285 0.028 52);
-  --popover: oklch(0.985 0.009 86);
-  --popover-foreground: oklch(0.285 0.028 52);
+  --background: #ffffff;
+  --foreground: oklch(0.2 0.01 262);
+  --card: #ffffff;
+  --card-foreground: oklch(0.2 0.01 262);
+  --popover: #ffffff;
+  --popover-foreground: oklch(0.2 0.01 262);
   --primary: #16223a;
-  --primary-foreground: oklch(0.975 0.014 84);
-  --secondary: oklch(0.928 0.017 80);
-  --secondary-foreground: oklch(0.33 0.03 50);
-  --muted: oklch(0.934 0.015 82);
-  --muted-foreground: oklch(0.5 0.024 55);
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.96 0.003 262);
+  --secondary-foreground: oklch(0.27 0.01 262);
+  --muted: oklch(0.965 0.003 262);
+  --muted-foreground: oklch(0.47 0.01 262);
   --accent: oklch(0.7 0.052 138);
   --accent-foreground: oklch(0.27 0.03 60);
   --destructive: oklch(0.55 0.19 27);
-  --border: oklch(0.885 0.016 74);
-  --input: oklch(0.885 0.016 74);
+  --border: oklch(0.9 0.004 262);
+  --input: oklch(0.9 0.004 262);
   --ring: #16223a;
   --clay: oklch(0.565 0.128 41);
   --sage: oklch(0.7 0.052 138);
@@ -84,14 +84,14 @@
   --chart-3: oklch(0.72 0.11 72);
   --chart-4: oklch(0.5 0.024 55);
   --chart-5: oklch(0.33 0.03 50);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.968 0.012 84);
-  --sidebar-foreground: oklch(0.285 0.028 52);
+  --radius: 0rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: oklch(0.2 0.01 262);
   --sidebar-primary: #16223a;
-  --sidebar-primary-foreground: oklch(0.975 0.014 84);
-  --sidebar-accent: oklch(0.928 0.017 80);
-  --sidebar-accent-foreground: oklch(0.33 0.03 50);
-  --sidebar-border: oklch(0.885 0.016 74);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: oklch(0.96 0.003 262);
+  --sidebar-accent-foreground: oklch(0.27 0.01 262);
+  --sidebar-border: oklch(0.9 0.004 262);
   --sidebar-ring: #16223a;
 }
 
@@ -132,17 +132,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* No rounded corners anywhere, including pills and circles. */
+  *,
+  ::before,
+  ::after {
+    border-radius: 0 !important;
+  }
   body {
     @apply bg-background text-foreground;
-    /* Subtle paper grain so large cream areas read as material, not flat. */
-    background-image:
-      radial-gradient(
-        ellipse 80% 60% at 50% -10%,
-        color-mix(in oklch, var(--ochre) 12%, transparent),
-        transparent 60%
-      ),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-    background-attachment: fixed, fixed;
   }
   html {
     @apply font-sans;
