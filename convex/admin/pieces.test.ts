@@ -70,6 +70,23 @@ describe("admin.pieces.create", () => {
     expect(piece?.sortOrder).toBe(0);
   });
 
+  test("can publish straight away with photos already uploaded", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const photo = await t.run(async (ctx) => ctx.storage.store(new Blob(["x"])));
+
+    const id = await admin.mutation(api.admin.pieces.create, {
+      ...newPieceArgs,
+      images: [photo],
+      publish: true,
+    });
+    const piece = await t.run(async (ctx) => ctx.db.get("pieces", id));
+
+    expect(piece?.status).toBe("published");
+    expect(piece?.images).toEqual([photo]);
+  });
+
   test("assigns increasing sortOrder", async () => {
     process.env.ADMIN_EMAIL = ADMIN.email;
     const t = convexTest(schema, modules);

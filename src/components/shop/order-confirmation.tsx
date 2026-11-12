@@ -75,6 +75,12 @@ export function OrderConfirmation({ sessionId }: { sessionId: string | null }) {
             <dt className="text-muted-foreground">Subtotal</dt>
             <dd>{formatPrice(order.subtotalCents)}</dd>
           </div>
+          {order.discountCents > 0 && (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Discount</dt>
+              <dd>-{formatPrice(order.discountCents)}</dd>
+            </div>
+          )}
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Shipping</dt>
             <dd>{order.shippingCents === 0 ? "Free" : formatPrice(order.shippingCents)}</dd>

@@ -148,6 +148,8 @@ export default defineSchema({
     subtotalCents: v.number(),
     shippingCents: v.number(),
     taxCents: v.number(),
+    // What a promo code took off. Absent on orders from before promo codes.
+    discountCents: v.optional(v.number()),
     totalCents: v.number(),
     stripeSessionId: v.union(v.string(), v.null()),
     stripePaymentIntentId: v.union(v.string(), v.null()),

@@ -137,6 +137,12 @@ export function OrderDetail({ id }: { id: string }) {
                 <dt className="text-muted-foreground">Subtotal</dt>
                 <dd>{money(order.subtotalCents)}</dd>
               </div>
+              {(order.discountCents ?? 0) > 0 && (
+                <div className="flex justify-between">
+                  <dt className="text-muted-foreground">Discount</dt>
+                  <dd>-{money(order.discountCents ?? 0)}</dd>
+                </div>
+              )}
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Shipping</dt>
                 <dd>{money(order.shippingCents)}</dd>

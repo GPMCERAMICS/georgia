@@ -121,12 +121,24 @@ export const get = query({
   },
 });
 
+/** Photos one piece may carry. */
+export const MAX_IMAGES = 12;
+
 export const create = mutation({
-  args: editableFields,
-  handler: async (ctx, args) => {
+  args: {
+    ...editableFields,
+    // Photos already uploaded to storage by the form, in display order.
+    images: v.optional(v.array(v.id("_storage"))),
+    // Put it on the shop straight away instead of leaving it a draft.
+    publish: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { images = [], publish = false, ...args }) => {
     await requireAdmin(ctx);
     validate(args);
     await assertSlugFree(ctx, args.slug);
+    if (images.length > MAX_IMAGES) {
+      throw new Error(`A piece can have at most ${MAX_IMAGES} photos`);
+    }
 
     const existing = await ctx.db.query("pieces").take(MAX_PIECES);
     const sortOrder =
@@ -136,8 +148,8 @@ export const create = mutation({
 
     return ctx.db.insert("pieces", {
       ...args,
-      images: [],
-      status: "draft",
+      images,
+      status: publish ? "published" : "draft",
       sortOrder,
     });
   },

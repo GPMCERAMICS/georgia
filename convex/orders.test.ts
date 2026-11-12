@@ -133,6 +133,19 @@ describe("order lifecycle", () => {
     totalCents: 19500,
   };
 
+  test("a promo code discount is recorded on the paid order", async () => {
+    const t = convexTest(schema, modules);
+    await reservedOrder(t);
+    await t.mutation(internal.orders.markPaid, {
+      ...paidArgs,
+      discountCents: 5000,
+      totalCents: 14500,
+    });
+    const confirmation = await t.query(api.orders.confirmation, { stripeSessionId: "cs_test_1" });
+    expect(confirmation?.discountCents).toBe(5000);
+    expect(confirmation?.totalCents).toBe(14500);
+  });
+
   test("markPaid settles the order and is idempotent on replay", async () => {
     const t = convexTest(schema, modules);
     const { orderId } = await reservedOrder(t);

@@ -61,7 +61,11 @@ export const handleWebhook = internalAction({
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        if (session.payment_status !== "paid") {
+        // "no_payment_required" is a promo code covering the whole order.
+        if (
+          session.payment_status !== "paid" &&
+          session.payment_status !== "no_payment_required"
+        ) {
           // Delayed payment methods are not enabled; nothing to do until paid.
           return { handled: "completed-unpaid" };
         }
@@ -76,6 +80,7 @@ export const handleWebhook = internalAction({
           shippingAddress: shippingAddressOf(session),
           shippingCents: session.total_details?.amount_shipping ?? 0,
           taxCents: session.total_details?.amount_tax ?? 0,
+          discountCents: session.total_details?.amount_discount ?? 0,
           totalCents: session.amount_total ?? 0,
         });
         return { handled: event.type };

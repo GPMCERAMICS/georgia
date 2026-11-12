@@ -212,6 +212,7 @@ export const markPaid = internalMutation({
     shippingAddress: v.union(shippingAddress, v.null()),
     shippingCents: v.number(),
     taxCents: v.number(),
+    discountCents: v.optional(v.number()),
     totalCents: v.number(),
   },
   handler: async (ctx, args) => {
@@ -229,6 +230,7 @@ export const markPaid = internalMutation({
       shippingAddress: args.shippingAddress,
       shippingCents: args.shippingCents,
       taxCents: args.taxCents,
+      discountCents: args.discountCents ?? 0,
       totalCents: args.totalCents,
       paidAt: Date.now(),
     });
@@ -345,6 +347,7 @@ export const confirmation = query({
       subtotalCents: order.subtotalCents,
       shippingCents: order.shippingCents,
       taxCents: order.taxCents,
+      discountCents: order.discountCents ?? 0,
       totalCents: order.totalCents,
       items: items.map((item) => ({
         title: item.titleSnapshot,

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
 import type { AdminPiece } from "@convex/admin/pieces";
 import type { Id } from "@convex/_generated/dataModel";
-import { PhotoUpload } from "@/components/admin/photo-upload";
+import { PhotoPicker, PhotoUpload, type StagedPhoto } from "@/components/admin/photo-upload";
 import { useCatalogNow } from "@/components/shop/use-catalog-now";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,7 @@ function PieceFormFields({
   const [dishwasherSafe, setDishwasherSafe] = useState(piece?.dishwasherSafe ?? false);
   const [careNotes, setCareNotes] = useState(piece?.careNotes ?? "");
   const [shippingTier, setShippingTier] = useState<ShippingTier>(piece?.shippingTier ?? "plate");
+  const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [saving, setSaving] = useState(false);
 
   function toggleTag(slug: string) {
@@ -117,8 +118,11 @@ function PieceFormFields({
     );
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // The button that submitted decides draft vs. published for a new piece.
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const publish = submitter instanceof HTMLButtonElement && submitter.value === "publish";
     setSaving(true);
 
     const w = num(width);
@@ -148,8 +152,12 @@ function PieceFormFields({
         await update({ id: piece._id, ...fields });
         toast.success("Saved");
       } else {
-        const newId = await create(fields);
-        toast.success("Created as a draft — add photos, then publish");
+        const newId = await create({
+          ...fields,
+          images: photos.map((photo) => photo.storageId),
+          publish,
+        });
+        toast.success(publish ? "Published — it's on the shop now" : "Saved as a draft");
         router.push(`/admin/pieces/${newId}`);
       }
     } catch (error) {
@@ -270,9 +278,20 @@ function PieceFormFields({
         )}
       </div>
 
-      <form className="grid gap-8 lg:grid-cols-[1fr_320px]" onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-8">
-          <section className="grid gap-5 rounded-2xl border border-border bg-card p-5">
+      <form className="flex max-w-2xl flex-col gap-8" onSubmit={handleSubmit}>
+          <section className="grid gap-4 border border-border bg-card p-5">
+            <h2 className="font-display text-xl">Photos</h2>
+            <p className="-mt-3 text-sm text-muted-foreground">
+              The first photo is the cover. Square photos look best.
+            </p>
+            {piece ? (
+              <PhotoUpload pieceId={piece._id} />
+            ) : (
+              <PhotoPicker photos={photos} onChange={setPhotos} />
+            )}
+          </section>
+
+          <section className="grid gap-5 border border-border bg-card p-5">
             <h2 className="font-display text-xl">Listing</h2>
             <Field label="Title" htmlFor="title">
               <Input
@@ -338,7 +357,37 @@ function PieceFormFields({
             </Field>
           </section>
 
-          <section className="grid gap-5 rounded-2xl border border-border bg-card p-5">
+          <section className="grid gap-5 border border-border bg-card p-5">
+            <h2 className="font-display text-xl">Selling</h2>
+            <Field label="How it sells" htmlFor="mode">
+              <NativeSelect id="mode" value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+                <option value="oneoff">One of a kind</option>
+                <option value="madeToOrder">Made to order</option>
+              </NativeSelect>
+            </Field>
+            <div className="grid items-start gap-5 sm:grid-cols-2">
+            <Field label="Price (USD)" htmlFor="price">
+              <Input id="price" type="number" step="0.01" min="0" required value={price} onChange={(e) => setPrice(e.target.value)} />
+            </Field>
+            {mode === "oneoff" ? (
+              <Field label="In stock" htmlFor="stock" hint="Usually 1. Set to 0 to show it as sold.">
+                <Input id="stock" type="number" min="0" step="1" value={stock} onChange={(e) => setStock(e.target.value)} />
+              </Field>
+            ) : (
+              <Field label="Lead time (weeks)" htmlFor="lead" hint="Shown to buyers as an estimate.">
+                <Input id="lead" type="number" min="0" step="1" value={leadTimeWeeks} onChange={(e) => setLeadTimeWeeks(e.target.value)} />
+              </Field>
+            )}
+            </div>
+            <Field label="Shipping size" htmlFor="tier" hint="Sets the flat rate from Settings.">
+              <NativeSelect id="tier" value={shippingTier} onChange={(e) => setShippingTier(e.target.value as ShippingTier)}>
+                <option value="plate">Small item — plate-sized box</option>
+                <option value="platter">Large item — platter-sized box</option>
+              </NativeSelect>
+            </Field>
+          </section>
+
+          <section className="grid gap-5 border border-border bg-card p-5">
             <h2 className="font-display text-xl">Details</h2>
             <Field label="Size, in words" htmlFor="size" hint='Shown on the card, e.g. 14" platter'>
               <Input id="size" value={size} onChange={(e) => setSize(e.target.value)} />
@@ -368,55 +417,32 @@ function PieceFormFields({
             </Field>
           </section>
 
-          {piece && (
-            <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
-              <h2 className="font-display text-xl">Photos</h2>
-              <p className="-mt-3 text-sm text-muted-foreground">The first photo is the cover.</p>
-              <PhotoUpload pieceId={piece._id} />
-            </section>
-          )}
-        </div>
-
-        <aside className="flex flex-col gap-6">
-          <section className="grid gap-5 rounded-2xl border border-border bg-card p-5">
-            <h2 className="font-display text-xl">Selling</h2>
-            <Field label="How it sells" htmlFor="mode">
-              <NativeSelect id="mode" value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
-                <option value="oneoff">One of a kind</option>
-                <option value="madeToOrder">Made to order</option>
-              </NativeSelect>
-            </Field>
-            <Field label="Price (USD)" htmlFor="price">
-              <Input id="price" type="number" step="0.01" min="0" required value={price} onChange={(e) => setPrice(e.target.value)} />
-            </Field>
-            {mode === "oneoff" ? (
-              <Field label="In stock" htmlFor="stock" hint="Usually 1. Set to 0 to show it as sold.">
-                <Input id="stock" type="number" min="0" step="1" value={stock} onChange={(e) => setStock(e.target.value)} />
-              </Field>
+          <div className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
+            {piece ? (
+              <Button type="submit" size="lg" disabled={saving}>
+                {saving ? "Saving…" : "Save changes"}
+              </Button>
             ) : (
-              <Field label="Lead time (weeks)" htmlFor="lead" hint="Shown to buyers as an estimate.">
-                <Input id="lead" type="number" min="0" step="1" value={leadTimeWeeks} onChange={(e) => setLeadTimeWeeks(e.target.value)} />
-              </Field>
-            )}
-            <Field label="Shipping size" htmlFor="tier" hint="Sets the flat rate from Settings.">
-              <NativeSelect id="tier" value={shippingTier} onChange={(e) => setShippingTier(e.target.value as ShippingTier)}>
-                <option value="plate">Plate (small box)</option>
-                <option value="platter">Platter (large box)</option>
-              </NativeSelect>
-            </Field>
-          </section>
-
-          <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={saving} className="rounded-full">
-              {saving ? "Saving…" : piece ? "Save changes" : "Create draft"}
-            </Button>
-            {!piece && (
-              <p className="text-xs text-muted-foreground">
-                Photos can be added once the piece exists. It stays private until you publish it.
-              </p>
+              <>
+                <Button type="submit" size="lg" name="intent" value="publish" disabled={saving}>
+                  {saving ? "Saving…" : "Publish"}
+                </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  variant="outline"
+                  name="intent"
+                  value="draft"
+                  disabled={saving}
+                >
+                  Save as draft
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  A draft stays private until you publish it.
+                </p>
+              </>
             )}
           </div>
-        </aside>
       </form>
     </div>
   );

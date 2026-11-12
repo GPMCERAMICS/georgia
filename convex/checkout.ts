@@ -77,6 +77,9 @@ export const start = action({
           },
         ],
         automatic_tax: { enabled: reserved.taxEnabled },
+        // Codes are created and managed in the Stripe dashboard; this shows
+        // the "Add promotion code" field on the Stripe checkout page.
+        allow_promotion_codes: true,
         expires_at: Math.floor((Date.now() + STRIPE_SESSION_MS) / 1000),
         client_reference_id: reserved.orderNumber,
         metadata: { orderId: reserved.orderId, orderNumber: reserved.orderNumber },
