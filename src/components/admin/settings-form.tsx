@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "./admin-shell";
+import { EmailTest } from "./email-test";
 
 type Settings = NonNullable<ReturnType<typeof useQuery<typeof api.admin.settings.get>>>;
 
@@ -123,6 +124,10 @@ function SettingsFields({ initial }: { initial: Settings }) {
           {saving ? "Saving…" : "Save settings"}
         </Button>
       </form>
+
+      <div className="mt-10 max-w-2xl">
+        <EmailTest />
+      </div>
     </div>
   );
 }

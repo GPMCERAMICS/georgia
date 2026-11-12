@@ -17,11 +17,11 @@ import { getSettings } from "./settings";
 const money = (cents: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
-function fromAddress(): string {
+export function fromAddress(): string {
   return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <onboarding@resend.dev>";
 }
 
-async function send(message: {
+export async function send(message: {
   to: string[];
   subject: string;
   text: string;

@@ -317,3 +317,23 @@ describe("admin.pieces.remove", () => {
     await expect(admin.mutation(api.admin.pieces.remove, { id })).rejects.toThrow("Archive it");
   });
 });
+
+describe("admin.emailTest.sendTest", () => {
+  test("is refused for anyone who is not an admin", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    const t = convexTest(schema, modules);
+    await expect(
+      t.action(api.admin.emailTest.sendTest, { to: ["someone@example.com"] }),
+    ).rejects.toThrow("Not authorised");
+  });
+
+  test("says so when the mail key is missing, rather than pretending to send", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    delete process.env.RESEND_API_KEY;
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    await expect(
+      admin.action(api.admin.emailTest.sendTest, { to: ["someone@example.com"] }),
+    ).rejects.toThrow("RESEND_API_KEY");
+  });
+});

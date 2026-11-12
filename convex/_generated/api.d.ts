@@ -10,6 +10,7 @@
 
 import type * as admin_customers from "../admin/customers.js";
 import type * as admin_dashboard from "../admin/dashboard.js";
+import type * as admin_emailTest from "../admin/emailTest.js";
 import type * as admin_inquiries from "../admin/inquiries.js";
 import type * as admin_maintenance from "../admin/maintenance.js";
 import type * as admin_orders from "../admin/orders.js";
@@ -28,6 +29,7 @@ import type * as lib_adminEmails from "../lib/adminEmails.js";
 import type * as lib_adminGuard from "../lib/adminGuard.js";
 import type * as lib_availability from "../lib/availability.js";
 import type * as lib_claims from "../lib/claims.js";
+import type * as lib_destination from "../lib/destination.js";
 import type * as lib_pieceShape from "../lib/pieceShape.js";
 import type * as lib_resendOtp from "../lib/resendOtp.js";
 import type * as lib_shipping from "../lib/shipping.js";
@@ -46,6 +48,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   "admin/customers": typeof admin_customers;
   "admin/dashboard": typeof admin_dashboard;
+  "admin/emailTest": typeof admin_emailTest;
   "admin/inquiries": typeof admin_inquiries;
   "admin/maintenance": typeof admin_maintenance;
   "admin/orders": typeof admin_orders;
@@ -64,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   "lib/adminGuard": typeof lib_adminGuard;
   "lib/availability": typeof lib_availability;
   "lib/claims": typeof lib_claims;
+  "lib/destination": typeof lib_destination;
   "lib/pieceShape": typeof lib_pieceShape;
   "lib/resendOtp": typeof lib_resendOtp;
   "lib/shipping": typeof lib_shipping;
