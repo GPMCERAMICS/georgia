@@ -11,10 +11,23 @@ import type { Id } from "@convex/_generated/dataModel";
 /** A photo uploaded to storage but not yet attached to a piece. */
 export type StagedPhoto = { storageId: Id<"_storage">; previewUrl: string };
 
+/** Formats the storefront can display. Phone HEIC photos are not among them. */
+const ACCEPTED_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+  "image/gif",
+  "image/svg+xml",
+];
+
 /** Uploads one file to Convex storage and returns its id. */
 function useUploadFile() {
   const generateUploadUrl = useMutation(api.admin.uploads.generateUploadUrl);
   return async (file: File): Promise<Id<"_storage">> => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      throw new Error(`${file.name} can't be used. Upload a JPG, PNG or WebP photo.`);
+    }
     const uploadUrl = await generateUploadUrl();
     const response = await fetch(uploadUrl, {
       method: "POST",
@@ -64,7 +77,7 @@ function PhotoStrip({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={ACCEPTED_TYPES.join(",")}
         multiple
         className="hidden"
         onChange={(event) => {
