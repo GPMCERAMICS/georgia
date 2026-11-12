@@ -18,7 +18,7 @@ const money = (cents: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
 function fromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "Georgia Perkins Pottery <onboarding@resend.dev>";
+  return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <onboarding@resend.dev>";
 }
 
 async function send(message: {
@@ -106,7 +106,7 @@ export const orderPaid = internalAction({
         text: [
           `Hi ${order.name ?? "there"},`,
           "",
-          "Thank you for your order from Georgia Perkins Pottery. Each piece is",
+          "Thank you for your order from GPM Ceramics. Each piece is",
           "handmade, so Georgia will pack it with care and let you know when it ships.",
           "",
           `Order ${order.orderNumber}`,

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { CartButton } from "@/components/shop/cart-button";
+import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 
@@ -62,10 +63,10 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
           </details>
         </div>
 
-        <Link href="/" className="flex items-center gap-2.5" aria-label="Georgia Perkins Pottery, home">
+        <Link href="/" className="flex items-center gap-2.5" aria-label={`${site.name}, home`}>
           <Logo className={cn("h-8 w-auto md:h-9", !overlay && "text-primary")} />
           <span className="font-display text-xl leading-none md:text-2xl">
-            Georgia Perkins
+            {site.name}
           </span>
         </Link>
 

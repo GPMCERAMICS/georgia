@@ -1,4 +1,4 @@
-# Georgia Perkins Pottery
+# GPM Ceramics
 
 A storefront and dashboard for one-of-a-kind ceramics. Next.js 16 on Vercel,
 Convex for the database, auth, file storage, and scheduled jobs, Stripe
@@ -24,7 +24,7 @@ npx convex env set ADMIN_EMAIL you@example.com
 npx convex env set STRIPE_SECRET_KEY sk_test_…
 npx convex env set STRIPE_WEBHOOK_SECRET whsec_…
 npx convex env set RESEND_API_KEY re_…
-npx convex env set RESEND_FROM_EMAIL "Georgia Perkins Pottery <onboarding@resend.dev>"
+npx convex env set RESEND_FROM_EMAIL "GPM Ceramics <onboarding@resend.dev>"
 npx convex env set SITE_URL http://localhost:3000
 ```
 

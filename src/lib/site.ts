@@ -1,5 +1,5 @@
 /**
- * Central content for the Georgia Perkins Pottery site.
+ * Central content for the GPM Ceramics site.
  *
  * This is the ONE file Georgia edits to change copy, contact details, and the
  * shop section headers. Placeholders are marked with `PLACEHOLDER` — swap
@@ -7,12 +7,14 @@
  */
 
 export const site = {
-  name: "Georgia Perkins Pottery",
-  shortName: "Georgia Perkins",
+  // The brand. The maker, Georgia Perkins-Miller, is named where it's about her.
+  name: "GPM Ceramics",
+  shortName: "GPM Ceramics",
+  maker: "Georgia Perkins-Miller",
   // Used in <title>, JSON-LD, and the hero.
   tagline: "Whimsical hand painted ceramics.",
   description:
-    "Handmade artisanal pottery by Georgia Perkins — one-of-a-kind plates, " +
+    "Handmade artisanal pottery by Georgia Perkins-Miller — one-of-a-kind plates, " +
     "garden pieces, and custom commissions, each thrown and glazed by hand.",
 
   // Studio location; drives local SEO via the LocalBusiness JSON-LD. The

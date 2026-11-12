@@ -28,7 +28,7 @@ export default function ContactPage() {
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:gap-20 md:py-28">
           <Image
             src="/gpm.webp"
-            alt="Georgia Perkins-Miller, the maker behind Georgia Perkins Pottery"
+            alt="Georgia Perkins-Miller, the maker behind GPM Ceramics"
             width={756}
             height={1008}
             sizes="(min-width: 768px) 28rem, 100vw"

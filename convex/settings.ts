@@ -8,7 +8,7 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
  */
 export const DEFAULT_SETTINGS: Omit<Doc<"settings">, "_id" | "_creationTime"> =
   {
-    storeName: "Georgia Perkins Pottery",
+    storeName: "GPM Ceramics",
     notifyEmail: "",
     shipping: {
       plateCents: 2500,

@@ -103,7 +103,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <Link href="/admin" className="mb-6 flex items-center gap-2.5 px-2">
           <Logo className="h-8 w-auto text-primary" />
           <span className="font-display text-base leading-none">
-            Georgia Perkins
+            GPM Ceramics
             <span className="block text-[0.6rem] font-sans uppercase tracking-[0.28em] text-muted-foreground">
               Dashboard
             </span>
@@ -152,7 +152,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <Button variant="ghost" size="icon" onClick={() => setOpen(true)} aria-label="Open menu">
             <Menu />
           </Button>
-          <span className="font-display text-lg">Georgia Perkins</span>
+          <span className="font-display text-lg">GPM Ceramics</span>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8 md:py-10">{children}</main>
       </div>

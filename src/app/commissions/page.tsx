@@ -10,7 +10,7 @@ import { commission, site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Commissions",
   description:
-    "Commission a handmade, hand painted ceramic piece from Georgia Perkins — weddings, homes, anniversaries, and milestones.",
+    "Commission a handmade, hand painted ceramic piece from GPM Ceramics — weddings, homes, anniversaries, and milestones.",
 };
 
 export default async function CommissionsPage(props: {

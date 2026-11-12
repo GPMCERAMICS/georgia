@@ -11,7 +11,7 @@ export function About() {
           <div className="mx-auto max-w-md overflow-hidden">
             <Image
               src="/gpm.webp"
-              alt="Georgia Perkins-Miller, the maker behind Georgia Perkins Pottery"
+              alt="Georgia Perkins-Miller, the maker behind GPM Ceramics"
               width={756}
               height={1008}
               sizes="(min-width: 768px) 28rem, 100vw"

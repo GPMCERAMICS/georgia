@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Shop",
-  description: "Handmade pottery available to buy from Georgia Perkins.",
+  description: "Handmade pottery available to buy from GPM Ceramics.",
 };
 
 // Availability is time- and order-dependent; never serve a build-time snapshot.

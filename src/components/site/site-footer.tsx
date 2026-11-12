@@ -23,7 +23,7 @@ export function SiteFooter() {
     <footer className="mt-auto bg-secondary">
       <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-16 md:grid-cols-[1.2fr_2fr] md:px-10">
         <div>
-          <p className="font-display text-4xl leading-none">Georgia Perkins</p>
+          <p className="font-display text-4xl leading-none">{site.name}</p>
           <p className="mt-4 max-w-xs leading-relaxed">
             Handmade, hand painted ceramics and custom commissions from{" "}
             {site.location.city}, Georgia.

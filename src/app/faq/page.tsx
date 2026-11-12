@@ -8,7 +8,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Frequently asked questions about commissions, shipping, and caring for handmade ceramics from Georgia Perkins Pottery.",
+    "Frequently asked questions about commissions, shipping, and caring for handmade ceramics from GPM Ceramics.",
 };
 
 // PLACEHOLDER answers — believable defaults for a handmade ceramics studio,

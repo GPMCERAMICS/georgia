@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     "garden pottery",
     site.name,
   ],
-  authors: [{ name: site.shortName }],
+  authors: [{ name: site.maker }],
   openGraph: {
     title: `${site.name} — Handmade Artisanal Pottery`,
     description: site.description,

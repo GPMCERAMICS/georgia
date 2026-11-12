@@ -43,7 +43,7 @@ export default function OpengraphImage() {
           <img src={gMark} width={132} height={183} alt="" />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 92, lineHeight: 1.0, fontWeight: 600 }}>
-              Georgia Perkins
+              GPM Ceramics
             </div>
             <div
               style={{
@@ -54,7 +54,7 @@ export default function OpengraphImage() {
                 marginTop: 8,
               }}
             >
-              Pottery
+              by Georgia Perkins-Miller
             </div>
           </div>
         </div>
