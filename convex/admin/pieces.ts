@@ -121,6 +121,9 @@ export const get = query({
   },
 });
 
+/** Order lines read when deciding whether a piece may be deleted. */
+const MAX_ORDER_ITEMS_PER_PIECE = 500;
+
 /** Photos one piece may carry. */
 export const MAX_IMAGES = 12;
 
@@ -226,19 +229,31 @@ export const reorder = mutation({
   },
 });
 
-/** Permanent. Refused while any order references the piece. */
+/**
+ * Permanent. Refused while a real order references the piece: one that was
+ * paid for (even if later refunded), or a checkout still in progress.
+ * Abandoned and expired checkouts never took money, so they do not block it;
+ * their order lines keep the title they were sold under.
+ */
 export const remove = mutation({
   args: { id: v.id("pieces") },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
     const piece = await ctx.db.get("pieces", args.id);
     if (!piece) return null;
-    const referenced = await ctx.db
+    const now = Date.now();
+    const items = await ctx.db
       .query("orderItems")
       .withIndex("by_pieceId", (q) => q.eq("pieceId", args.id))
-      .take(1);
-    if (referenced.length > 0) {
-      throw new Error("This piece has orders. Archive it instead of deleting.");
+      .take(MAX_ORDER_ITEMS_PER_PIECE);
+    for (const item of items) {
+      if (item.orderStatus === "pending") {
+        if (item.expiresAt > now) {
+          throw new Error("Someone is checking out with this piece right now. Try again in a few minutes.");
+        }
+      } else if (item.orderStatus !== "expired" && item.orderStatus !== "cancelled") {
+        throw new Error("This piece has orders. Archive it instead of deleting.");
+      }
     }
     await ctx.db.delete("pieces", args.id);
     await Promise.all(piece.images.map((imageId) => ctx.storage.delete(imageId)));

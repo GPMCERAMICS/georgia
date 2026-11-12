@@ -267,7 +267,7 @@ function PieceFormFields({
             <ConfirmDialog
               trigger={<Button variant="ghost" className="rounded-full text-destructive" />}
               title="Delete this piece for good?"
-              description="Photos are deleted too. Pieces with orders cannot be deleted — archive those instead."
+              description="Photos are deleted too. Pieces that have been bought cannot be deleted — archive those instead."
               confirmLabel="Delete"
               onConfirm={() =>
                 act("Deleted", async () => {

@@ -2,7 +2,7 @@
 import { convexTest } from "convex-test";
 import { describe, expect, test } from "vitest";
 import schema from "../schema";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 
 // import.meta.glob("../**/*.ts") from this file also matches its own sibling
 // files (convex/admin/*.ts, via "up-to-convex/-then-back-down"), and Vite
@@ -254,5 +254,66 @@ describe("admin.pieces.reorder", () => {
 
     const all = await admin.query(api.admin.pieces.list, { now: NOW });
     expect(all.map((p) => p.title)).toEqual(["Owl Plate", "Kingfisher Plate"]);
+  });
+});
+
+describe("admin.pieces.remove", () => {
+  const shipTo = {
+    name: "Pat Buyer",
+    line1: "1 Marsh Rd",
+    line2: null,
+    city: "Brunswick",
+    state: "GA",
+    postalCode: "31520",
+  };
+
+  async function publishedPieceWithCheckout(t: ReturnType<typeof convexTest>) {
+    const admin = await asAdmin(t);
+    const id = await admin.mutation(api.admin.pieces.create, { ...newPieceArgs, publish: true });
+    const reserved = await t.mutation(internal.orders.reserve, {
+      pieceIds: [id],
+      shippingMethod: "ship",
+      shipTo,
+    });
+    return { admin, id, orderId: reserved.orderId };
+  }
+
+  test("an abandoned checkout does not stop a piece being deleted", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    const t = convexTest(schema, modules);
+    const { admin, id } = await publishedPieceWithCheckout(t);
+
+    // The hold is still live: refused for now.
+    await expect(admin.mutation(api.admin.pieces.remove, { id })).rejects.toThrow("checking out");
+
+    // Let the hold lapse without the order ever being paid.
+    await t.run(async (ctx) => {
+      const items = await ctx.db
+        .query("orderItems")
+        .withIndex("by_pieceId", (q) => q.eq("pieceId", id))
+        .take(10);
+      for (const item of items) await ctx.db.patch("orderItems", item._id, { expiresAt: 1 });
+    });
+    await admin.mutation(api.admin.pieces.remove, { id });
+    expect(await t.run(async (ctx) => ctx.db.get("pieces", id))).toBeNull();
+  });
+
+  test("a piece someone paid for cannot be deleted", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    const t = convexTest(schema, modules);
+    const { admin, id, orderId } = await publishedPieceWithCheckout(t);
+    await t.mutation(internal.orders.attachSession, { orderId, stripeSessionId: "cs_test_del" });
+    await t.mutation(internal.orders.markPaid, {
+      stripeSessionId: "cs_test_del",
+      stripePaymentIntentId: "pi_del",
+      email: "buyer@example.com",
+      name: "Pat Buyer",
+      shippingAddress: null,
+      shippingCents: 0,
+      taxCents: 0,
+      totalCents: newPieceArgs.priceCents,
+    });
+
+    await expect(admin.mutation(api.admin.pieces.remove, { id })).rejects.toThrow("Archive it");
   });
 });
