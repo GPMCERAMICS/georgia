@@ -83,7 +83,13 @@ export function OrderConfirmation({ sessionId }: { sessionId: string | null }) {
           )}
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Shipping</dt>
-            <dd>{order.shippingCents === 0 ? "Free" : formatPrice(order.shippingCents)}</dd>
+            <dd>
+              {order.shippingCents > 0
+                ? formatPrice(order.shippingCents)
+                : order.shippingMethod === "pickup"
+                  ? "Free pickup"
+                  : "Included"}
+            </dd>
           </div>
           {order.taxCents > 0 && (
             <div className="flex justify-between">

@@ -12,9 +12,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "./admin-shell";
 
-const dollars = (cents: number) => (cents / 100).toFixed(2);
-const cents = (value: string) => Math.max(0, Math.round(Number(value || 0) * 100));
-
 type Settings = NonNullable<ReturnType<typeof useQuery<typeof api.admin.settings.get>>>;
 
 /** Loads once, then hands the settled values to the form as initial state. */
@@ -36,11 +33,6 @@ function SettingsFields({ initial }: { initial: Settings }) {
 
   const [storeName, setStoreName] = useState(initial.storeName);
   const [notifyEmail, setNotifyEmail] = useState(initial.notifyEmail);
-  const [plate, setPlate] = useState(dollars(initial.shipping.plateCents));
-  const [platter, setPlatter] = useState(dollars(initial.shipping.platterCents));
-  const [freeOver, setFreeOver] = useState(
-    initial.shipping.freeOverCents === null ? "" : dollars(initial.shipping.freeOverCents),
-  );
   const [pickupEnabled, setPickupEnabled] = useState(initial.pickup.enabled);
   const [pickupLabel, setPickupLabel] = useState(initial.pickup.label);
   const [pickupInstructions, setPickupInstructions] = useState(initial.pickup.instructions);
@@ -54,11 +46,8 @@ function SettingsFields({ initial }: { initial: Settings }) {
       await update({
         storeName: storeName.trim(),
         notifyEmail: notifyEmail.trim(),
-        shipping: {
-          plateCents: cents(plate),
-          platterCents: cents(platter),
-          freeOverCents: freeOver.trim() === "" ? null : cents(freeOver),
-        },
+        // Unused now that shipping is included; passed through unchanged.
+        shipping: initial.shipping,
         pickup: {
           enabled: pickupEnabled,
           label: pickupLabel.trim() || "Local pickup",
@@ -76,7 +65,7 @@ function SettingsFields({ initial }: { initial: Settings }) {
 
   return (
     <div>
-      <PageHeader title="Settings" description="Shipping, pickup, tax, and where notifications go." />
+      <PageHeader title="Settings" description="Pickup, tax, and where notifications go." />
       <form onSubmit={handleSubmit} className="flex max-w-2xl flex-col gap-6">
         <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
           <h2 className="font-display text-xl">Store</h2>
@@ -96,25 +85,13 @@ function SettingsFields({ initial }: { initial: Settings }) {
           </div>
         </section>
 
-        <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">
-          <h2 className="font-display text-xl">Shipping (US)</h2>
-          <p className="-mt-2 text-sm text-muted-foreground">
-            One flat rate per order, set by the largest piece in the box. Live carrier rates can replace this later.
+        <section className="grid gap-2 border border-border bg-card p-5">
+          <h2 className="font-display text-xl">Shipping</h2>
+          <p className="text-sm text-muted-foreground">
+            Shipping is included in every piece&apos;s price, so there are no rates to set.
+            Orders ship within the continental US only (the lower 48 states and DC); the
+            cart checks the address before checkout.
           </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="plate">Plate-sized box</Label>
-              <Input id="plate" type="number" step="0.01" min="0" value={plate} onChange={(e) => setPlate(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="platter">Platter-sized box</Label>
-              <Input id="platter" type="number" step="0.01" min="0" value={platter} onChange={(e) => setPlatter(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="freeOver">Free shipping over</Label>
-              <Input id="freeOver" type="number" step="0.01" min="0" placeholder="Off" value={freeOver} onChange={(e) => setFreeOver(e.target.value)} />
-            </div>
-          </div>
         </section>
 
         <section className="grid gap-4 rounded-2xl border border-border bg-card p-5">

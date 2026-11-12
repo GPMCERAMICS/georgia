@@ -104,11 +104,15 @@ function PieceFormFields({
   const [width, setWidth] = useState(piece?.dimensions ? String(piece.dimensions.widthIn) : "");
   const [height, setHeight] = useState(piece?.dimensions ? String(piece.dimensions.heightIn) : "");
   const [depth, setDepth] = useState(piece?.dimensions ? String(piece.dimensions.depthIn) : "");
-  const [weight, setWeight] = useState(piece?.weightOz != null ? String(piece.weightOz) : "");
+  // Entered in pounds; stored in ounces, which is what the catalog keeps.
+  const [weight, setWeight] = useState(
+    piece?.weightOz != null ? String(Number((piece.weightOz / 16).toFixed(2))) : "",
+  );
   const [foodSafe, setFoodSafe] = useState(piece?.foodSafe ?? true);
   const [dishwasherSafe, setDishwasherSafe] = useState(piece?.dishwasherSafe ?? false);
   const [careNotes, setCareNotes] = useState(piece?.careNotes ?? "");
-  const [shippingTier, setShippingTier] = useState<ShippingTier>(piece?.shippingTier ?? "plate");
+  // No longer affects price (shipping is included); kept as stored.
+  const shippingTier: ShippingTier = piece?.shippingTier ?? "plate";
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -141,7 +145,7 @@ function PieceFormFields({
       shippingTier,
       dimensions:
         w !== null && h !== null && d !== null ? { widthIn: w, heightIn: h, depthIn: d } : null,
-      weightOz: num(weight),
+      weightOz: num(weight) === null ? null : Math.round(num(weight)! * 16 * 100) / 100,
       foodSafe,
       dishwasherSafe,
       careNotes: careNotes.trim() === "" ? null : careNotes.trim(),
@@ -379,12 +383,9 @@ function PieceFormFields({
               </Field>
             )}
             </div>
-            <Field label="Shipping size" htmlFor="tier" hint="Sets the flat rate from Settings.">
-              <NativeSelect id="tier" value={shippingTier} onChange={(e) => setShippingTier(e.target.value as ShippingTier)}>
-                <option value="plate">Small item — plate-sized box</option>
-                <option value="platter">Large item — platter-sized box</option>
-              </NativeSelect>
-            </Field>
+            <p className="text-sm text-muted-foreground">
+              Shipping is included in the price, so set a price that covers packing and postage.
+            </p>
           </section>
 
           <section className="grid gap-5 border border-border bg-card p-5">
@@ -394,13 +395,13 @@ function PieceFormFields({
             </Field>
             <Field label="Dimensions (inches)" hint="Width × height × depth. Optional, but carriers will want it later.">
               <div className="grid grid-cols-3 gap-2">
-                <Input type="number" step="0.1" min="0" placeholder="W" value={width} onChange={(e) => setWidth(e.target.value)} aria-label="Width" />
-                <Input type="number" step="0.1" min="0" placeholder="H" value={height} onChange={(e) => setHeight(e.target.value)} aria-label="Height" />
-                <Input type="number" step="0.1" min="0" placeholder="D" value={depth} onChange={(e) => setDepth(e.target.value)} aria-label="Depth" />
+                <Input type="number" step="any" min="0" placeholder="W" value={width} onChange={(e) => setWidth(e.target.value)} aria-label="Width" />
+                <Input type="number" step="any" min="0" placeholder="H" value={height} onChange={(e) => setHeight(e.target.value)} aria-label="Height" />
+                <Input type="number" step="any" min="0" placeholder="D" value={depth} onChange={(e) => setDepth(e.target.value)} aria-label="Depth" />
               </div>
             </Field>
-            <Field label="Weight (oz)" htmlFor="weight">
-              <Input id="weight" type="number" step="1" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
+            <Field label="Weight (lbs)" htmlFor="weight">
+              <Input id="weight" type="number" step="any" min="0" value={weight} onChange={(e) => setWeight(e.target.value)} />
             </Field>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">

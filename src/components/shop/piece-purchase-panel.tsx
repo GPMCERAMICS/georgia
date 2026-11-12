@@ -104,7 +104,8 @@ export function PiecePurchasePanel({
             <p className="text-sm text-muted-foreground">
               {piece.mode === "madeToOrder"
                 ? "Made for you after you order. Every one is hand painted, so yours will be its own."
-                : "One of a kind. Once it sells, it's gone."}
+                : "One of a kind. Once it sells, it's gone."}{" "}
+              Shipping within the continental US is included.
             </p>
           </>
         )}

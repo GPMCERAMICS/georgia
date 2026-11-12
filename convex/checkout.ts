@@ -7,7 +7,7 @@ import type { ActionCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { STRIPE_SESSION_MS } from "./lib/hold";
-import { shippingMethod } from "./schema";
+import { shippingMethod, shipTo } from "./schema";
 
 function stripeClient() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -36,11 +36,15 @@ export const start = action({
   args: {
     pieceIds: v.array(v.id("pieces")),
     shippingMethod,
+    // The address from the cart. Required when shipping; reserve refuses
+    // anything outside the continental US before a hold or a charge exists.
+    shipTo: v.optional(shipTo),
   },
   handler: async (ctx, args): Promise<{ url: string }> => {
     const reserved = await ctx.runMutation(internal.orders.reserve, {
       pieceIds: args.pieceIds,
       shippingMethod: args.shippingMethod,
+      shipTo: args.shipTo,
     });
 
     try {
@@ -50,7 +54,23 @@ export const start = action({
       const shippingLabel =
         args.shippingMethod === "pickup"
           ? reserved.pickupLabel
-          : "Standard shipping (US)";
+          : "Shipping included (continental US)";
+      // The address was collected and checked in the cart. Stripe is told it
+      // rather than asked for it, so it cannot be changed to one we don't
+      // ship to on the payment page.
+      const shipping = reserved.shipTo
+        ? {
+            name: reserved.shipTo.name,
+            address: {
+              line1: reserved.shipTo.line1,
+              line2: reserved.shipTo.line2 ?? undefined,
+              city: reserved.shipTo.city,
+              state: reserved.shipTo.state,
+              postal_code: reserved.shipTo.postalCode,
+              country: "US",
+            },
+          }
+        : undefined;
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
@@ -65,8 +85,6 @@ export const start = action({
             },
           },
         })),
-        shipping_address_collection:
-          args.shippingMethod === "ship" ? { allowed_countries: ["US"] } : undefined,
         shipping_options: [
           {
             shipping_rate_data: {
@@ -85,6 +103,7 @@ export const start = action({
         metadata: { orderId: reserved.orderId, orderNumber: reserved.orderNumber },
         payment_intent_data: {
           metadata: { orderId: reserved.orderId, orderNumber: reserved.orderNumber },
+          shipping,
         },
         success_url: `${base}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${base}/cart?cancelled=${reserved.orderId}`,

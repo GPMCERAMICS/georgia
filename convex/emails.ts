@@ -92,7 +92,7 @@ export const orderPaid = internalAction({
       "",
       `Subtotal: ${money(order.subtotalCents)}`,
       (order.discountCents ?? 0) > 0 ? `Discount: -${money(order.discountCents ?? 0)}` : null,
-      `Shipping: ${money(order.shippingCents)}`,
+      `Shipping: ${order.shippingCents === 0 ? (order.shippingMethod === "pickup" ? "Local pickup" : "Included") : money(order.shippingCents)}`,
       order.taxCents > 0 ? `Tax: ${money(order.taxCents)}` : null,
       `Total: ${money(order.totalCents)}`,
     ]

@@ -5,10 +5,11 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { computeAvailability } from "./lib/availability";
 import { countClaims } from "./lib/claims";
+import { checkShipTo, type ShipTo } from "./lib/destination";
 import { HOLD_MS } from "./lib/hold";
 import { computeShippingCents } from "./lib/shipping";
 import { ensureSettings, getSettings } from "./settings";
-import { shippingAddress, shippingMethod } from "./schema";
+import { shippingAddress, shippingMethod, shipTo } from "./schema";
 
 export { HOLD_MINUTES, HOLD_MS } from "./lib/hold";
 
@@ -61,10 +62,21 @@ export const reserve = internalMutation({
   args: {
     pieceIds: v.array(v.id("pieces")),
     shippingMethod,
+    // Required when shipping. Checked here, before any hold or charge, so an
+    // order can never be taken for an address outside the shipping area.
+    shipTo: v.optional(shipTo),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
     if (args.pieceIds.length === 0) throw new Error("Your cart is empty.");
+
+    let destination: ShipTo | null = null;
+    if (args.shippingMethod === "ship") {
+      if (!args.shipTo) throw new Error("Enter a shipping address to continue.");
+      const checked = checkShipTo(args.shipTo);
+      if (!checked.ok) throw new Error(checked.error);
+      destination = checked.shipTo;
+    }
     if (args.pieceIds.length > MAX_ORDER_LINES) {
       throw new Error(`A single order can hold at most ${MAX_ORDER_LINES} pieces.`);
     }
@@ -102,12 +114,7 @@ export const reserve = internalMutation({
     }
 
     const subtotalCents = lines.reduce((sum, { piece }) => sum + piece.priceCents, 0);
-    const shippingCents = computeShippingCents(
-      lines.map(({ piece }) => piece),
-      args.shippingMethod,
-      subtotalCents,
-      settings.shipping,
-    );
+    const shippingCents = computeShippingCents();
 
     const settingsDoc = await ensureSettings(ctx);
     const orderNumber = `${ORDER_NUMBER_PREFIX}${settingsDoc.nextOrderNumber}`;
@@ -120,9 +127,18 @@ export const reserve = internalMutation({
       orderNumber,
       status: "pending",
       email: null,
-      name: null,
+      name: destination?.name ?? null,
       shippingMethod: args.shippingMethod,
-      shippingAddress: null,
+      shippingAddress: destination
+        ? {
+            line1: destination.line1,
+            line2: destination.line2,
+            city: destination.city,
+            state: destination.state,
+            postalCode: destination.postalCode,
+            country: "US",
+          }
+        : null,
       subtotalCents,
       shippingCents,
       taxCents: 0,
@@ -165,6 +181,7 @@ export const reserve = internalMutation({
       subtotalCents,
       shippingCents,
       shippingMethod: args.shippingMethod,
+      shipTo: destination,
       pickupLabel: settings.pickup.label,
       taxEnabled: settings.taxEnabled,
     };
@@ -226,8 +243,10 @@ export const markPaid = internalMutation({
     await setOrderStatus(ctx, order._id, "paid", {
       stripePaymentIntentId: args.stripePaymentIntentId,
       email: args.email,
-      name: args.name,
-      shippingAddress: args.shippingAddress,
+      // The cart's ship-to name and address are the ones that were checked
+      // against the shipping area; Stripe's are only a fallback (pickup).
+      name: order.name ?? args.name,
+      shippingAddress: order.shippingAddress ?? args.shippingAddress,
       shippingCents: args.shippingCents,
       taxCents: args.taxCents,
       discountCents: args.discountCents ?? 0,

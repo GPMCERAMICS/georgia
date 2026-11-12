@@ -55,6 +55,16 @@ export const dimensions = v.object({
   depthIn: v.number(),
 });
 
+/** The address a shopper gives in the cart, before Stripe is involved. */
+export const shipTo = v.object({
+  name: v.string(),
+  line1: v.string(),
+  line2: v.union(v.string(), v.null()),
+  city: v.string(),
+  state: v.string(),
+  postalCode: v.string(),
+});
+
 export const shippingAddress = v.object({
   line1: v.string(),
   line2: v.union(v.string(), v.null()),

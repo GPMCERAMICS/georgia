@@ -7,9 +7,18 @@ import { pieceFields } from "./pieces.test";
 
 const modules = import.meta.glob("./**/*.ts");
 
+const shipTo = {
+  name: "Pat Buyer",
+  line1: "1 Marsh Rd",
+  line2: null,
+  city: "Brunswick",
+  state: "GA",
+  postalCode: "31520",
+};
+
 
 describe("orders.reserve", () => {
-  test("holds every piece in the cart and prices shipping once", async () => {
+  test("holds every piece in the cart; shipping is included", async () => {
     const t = convexTest(schema, modules);
     const [plate, platter] = await t.run(async (ctx) => [
       await ctx.db.insert("pieces", pieceFields()),
@@ -22,14 +31,62 @@ describe("orders.reserve", () => {
     const reserved = await t.mutation(internal.orders.reserve, {
       pieceIds: [plate, platter],
       shippingMethod: "ship",
+      shipTo,
     });
 
     expect(reserved.orderNumber).toBe("GP-1001");
     expect(reserved.subtotalCents).toBe(48000);
-    expect(reserved.shippingCents).toBe(3500);
+    expect(reserved.shippingCents).toBe(0);
 
     const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
     expect(pieces.every((p) => p.availability.state === "held")).toBe(true);
+  });
+
+  test("refuses an address outside the continental US before holding anything", async () => {
+    const t = convexTest(schema, modules);
+    const pieceId = await t.run(async (ctx) => ctx.db.insert("pieces", pieceFields()));
+
+    await expect(
+      t.mutation(internal.orders.reserve, {
+        pieceIds: [pieceId],
+        shippingMethod: "ship",
+        shipTo: { ...shipTo, state: "HI", postalCode: "96813" },
+      }),
+    ).rejects.toThrow("continental US");
+    await expect(
+      t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" }),
+    ).rejects.toThrow("shipping address");
+
+    const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
+    expect(pieces[0].availability.state).toBe("available");
+  });
+
+  test("the cart's address is kept on the order, even if Stripe reports none", async () => {
+    const t = convexTest(schema, modules);
+    const pieceId = await t.run(async (ctx) => ctx.db.insert("pieces", pieceFields()));
+    const reserved = await t.mutation(internal.orders.reserve, {
+      pieceIds: [pieceId],
+      shippingMethod: "ship",
+      shipTo,
+    });
+    await t.mutation(internal.orders.attachSession, {
+      orderId: reserved.orderId,
+      stripeSessionId: "cs_test_addr",
+    });
+    await t.mutation(internal.orders.markPaid, {
+      stripeSessionId: "cs_test_addr",
+      stripePaymentIntentId: "pi_addr",
+      email: "buyer@example.com",
+      name: "Card Holder",
+      shippingAddress: null,
+      shippingCents: 0,
+      taxCents: 0,
+      totalCents: 18000,
+    });
+    const order = await t.run(async (ctx) => ctx.db.get("orders", reserved.orderId));
+    expect(order?.name).toBe("Pat Buyer");
+    expect(order?.shippingAddress?.state).toBe("GA");
+    expect(order?.shippingAddress?.postalCode).toBe("31520");
   });
 
   test("order numbers advance", async () => {
@@ -38,8 +95,8 @@ describe("orders.reserve", () => {
       await ctx.db.insert("pieces", pieceFields({ slug: "a" })),
       await ctx.db.insert("pieces", pieceFields({ slug: "b" })),
     ]);
-    const first = await t.mutation(internal.orders.reserve, { pieceIds: [a], shippingMethod: "ship" });
-    const second = await t.mutation(internal.orders.reserve, { pieceIds: [b], shippingMethod: "ship" });
+    const first = await t.mutation(internal.orders.reserve, { pieceIds: [a], shippingMethod: "ship", shipTo });
+    const second = await t.mutation(internal.orders.reserve, { pieceIds: [b], shippingMethod: "ship", shipTo });
     expect([first.orderNumber, second.orderNumber]).toEqual(["GP-1001", "GP-1002"]);
   });
 
@@ -47,9 +104,9 @@ describe("orders.reserve", () => {
     const t = convexTest(schema, modules);
     const pieceId = await t.run(async (ctx) => ctx.db.insert("pieces", pieceFields()));
 
-    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" });
+    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship", shipTo });
     await expect(
-      t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" }),
+      t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship", shipTo }),
     ).rejects.toThrow("checking out");
   });
 
@@ -61,7 +118,7 @@ describe("orders.reserve", () => {
     ]);
 
     await expect(
-      t.mutation(internal.orders.reserve, { pieceIds: [live, sold], shippingMethod: "ship" }),
+      t.mutation(internal.orders.reserve, { pieceIds: [live, sold], shippingMethod: "ship", shipTo }),
     ).rejects.toThrow("just sold");
 
     // The live piece was not held by the failed attempt.
@@ -77,8 +134,8 @@ describe("orders.reserve", () => {
     const pieceId = await t.run(async (ctx) =>
       ctx.db.insert("pieces", pieceFields({ mode: "madeToOrder", stock: null })),
     );
-    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" });
-    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship" });
+    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship", shipTo });
+    await t.mutation(internal.orders.reserve, { pieceIds: [pieceId], shippingMethod: "ship", shipTo });
     const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
     expect(pieces[0].availability).toEqual({ state: "available", remaining: null });
   });
@@ -90,13 +147,13 @@ describe("orders.reserve", () => {
       await ctx.db.insert("pieces", pieceFields({ slug: "live" })),
     ]);
     await expect(
-      t.mutation(internal.orders.reserve, { pieceIds: [draft], shippingMethod: "ship" }),
+      t.mutation(internal.orders.reserve, { pieceIds: [draft], shippingMethod: "ship", shipTo }),
     ).rejects.toThrow("no longer available");
     await expect(
-      t.mutation(internal.orders.reserve, { pieceIds: [], shippingMethod: "ship" }),
+      t.mutation(internal.orders.reserve, { pieceIds: [], shippingMethod: "ship", shipTo }),
     ).rejects.toThrow("empty");
     await expect(
-      t.mutation(internal.orders.reserve, { pieceIds: [live, live], shippingMethod: "ship" }),
+      t.mutation(internal.orders.reserve, { pieceIds: [live, live], shippingMethod: "ship", shipTo }),
     ).rejects.toThrow("once");
   });
 });
@@ -107,6 +164,7 @@ describe("order lifecycle", () => {
     const reserved = await t.mutation(internal.orders.reserve, {
       pieceIds: [pieceId],
       shippingMethod: "ship",
+      shipTo,
     });
     await t.mutation(internal.orders.attachSession, {
       orderId: reserved.orderId,

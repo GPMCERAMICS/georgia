@@ -26,12 +26,11 @@ const faqs = [
   {
     question: "How much does shipping cost?",
     answer:
-      "Shipping and handling is a flat rate based on the size of the piece: " +
-      "smaller pieces like plates ship for $25, and larger platters and " +
-      "sculptural pieces ship for $35 within the US. An order with several " +
-      "pieces ships together for one rate. Everything is packed by hand with generous " +
-      "padding. Local pickup is always free — choose it at checkout and we'll " +
-      "arrange a time.",
+      "Shipping is included in the price of every piece — the price you see " +
+      "is the price you pay. We ship within the continental US only (the " +
+      "lower 48 states and DC). Everything is packed by hand with generous " +
+      "padding. Local pickup is also available — choose it at checkout and " +
+      "we'll arrange a time.",
   },
   {
     question: "Are the pieces food safe?",
