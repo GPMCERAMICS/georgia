@@ -26,7 +26,7 @@ describe("orders.reserve", () => {
 
     expect(reserved.orderNumber).toBe("GP-1001");
     expect(reserved.subtotalCents).toBe(48000);
-    expect(reserved.shippingCents).toBe(2500);
+    expect(reserved.shippingCents).toBe(3500);
 
     const pieces = await t.query(api.pieces.listPublished, { now: Date.now() });
     expect(pieces.every((p) => p.availability.state === "held")).toBe(true);

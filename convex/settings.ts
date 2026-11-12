@@ -4,15 +4,15 @@ import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 /**
  * Defaults used until Georgia saves the Settings screen for the first time.
- * Rates are placeholders — see the launch checklist.
+ * Launch rates: $25 flat for a small item, $35 for a large one.
  */
 export const DEFAULT_SETTINGS: Omit<Doc<"settings">, "_id" | "_creationTime"> =
   {
     storeName: "Georgia Perkins Pottery",
     notifyEmail: "",
     shipping: {
-      plateCents: 1500,
-      platterCents: 2500,
+      plateCents: 2500,
+      platterCents: 3500,
       freeOverCents: null,
     },
     pickup: {

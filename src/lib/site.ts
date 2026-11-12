@@ -22,8 +22,8 @@ export const site = {
     country: "US",
   },
 
-  // PLACEHOLDER — where commission inquiries are emailed. Also shown in footer.
-  email: "hello@georgiaperkinspottery.com",
+  // Public contact address, shown in the footer and on contact pages.
+  email: "hello@gpmceramics.com",
 
   // Canonical production URL — the apex 308s to www.
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gpmceramics.com",
