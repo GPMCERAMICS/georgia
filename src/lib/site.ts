@@ -28,9 +28,11 @@ export const site = {
   // Canonical production URL — the apex 308s to www.
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gpmceramics.com",
 
-  // PLACEHOLDER social links (empty string hides the link).
+  // Social links (empty string hides the link). Instagram is blank until the
+  // account is ready.
   social: {
-    instagram: "https://instagram.com/",
+    facebook: "https://www.facebook.com/georgia.perkinsmiller",
+    instagram: "",
     pinterest: "",
   },
 

@@ -32,6 +32,16 @@ export function SiteFooter() {
             {site.email}
           </a>
           <div className="flex gap-5">
+            {site.social.facebook && (
+              <a
+                href={site.social.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Facebook
+              </a>
+            )}
             {site.social.instagram && (
               <a
                 href={site.social.instagram}

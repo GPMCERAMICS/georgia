@@ -28,7 +28,11 @@ export function JsonLd({ pieces, tags }: { pieces: PublicPiece[]; tags: PublicTa
       priceRange: "$$",
       // PLACEHOLDER: address omitted until the real city/state arrive — re-add
       // a PostalAddress from site.location for local SEO once known.
-      sameAs: [site.social.instagram, site.social.pinterest].filter(Boolean),
+      sameAs: [
+        site.social.facebook,
+        site.social.instagram,
+        site.social.pinterest,
+      ].filter(Boolean),
     },
     ...pieces.map((piece) => ({
       "@type": "Product",
