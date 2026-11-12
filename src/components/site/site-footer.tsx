@@ -6,7 +6,7 @@ export function SiteFooter() {
   const year = 2026; // static to keep the page fully server-cacheable
 
   return (
-    <footer className="mt-auto border-t border-border/60">
+    <footer className="mt-auto border-t border-border/60 bg-background">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-14 md:flex-row md:items-end md:justify-between">
         <div>
           <div className="flex items-center gap-3">
