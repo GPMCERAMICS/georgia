@@ -111,7 +111,7 @@ export function CartDrawer() {
             <span className="text-sm text-muted-foreground">Subtotal</span>
             <span className="font-display text-xl">{formatPrice(subtotal)}</span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Shipping is included. Any sales tax is added at checkout.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Free shipping. Any sales tax is added at checkout.</p>
           <Button asChild className="mt-4 w-full rounded-full" disabled={!lines || lines.length === 0}>
             <Link href="/cart" onClick={close}>
               Review and check out

@@ -384,7 +384,7 @@ function PieceFormFields({
             )}
             </div>
             <p className="text-sm text-muted-foreground">
-              Shipping is included in the price, so set a price that covers packing and postage.
+              Shipping is free for the buyer, so set a price that covers packing and postage.
             </p>
           </section>
 

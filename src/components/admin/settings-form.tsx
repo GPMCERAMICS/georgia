@@ -88,7 +88,7 @@ function SettingsFields({ initial }: { initial: Settings }) {
         <section className="grid gap-2 border border-border bg-card p-5">
           <h2 className="font-display text-xl">Shipping</h2>
           <p className="text-sm text-muted-foreground">
-            Shipping is included in every piece&apos;s price, so there are no rates to set.
+            Shipping is free on every order, so there are no rates to set.
             Orders ship within the continental US only (the lower 48 states and DC); the
             cart checks the address before checkout.
           </p>

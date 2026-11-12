@@ -197,12 +197,12 @@ export function CartCheckout() {
               onChange={() => setMethod("ship")}
             />
             <span className="flex flex-1 flex-col">
-              <span className="text-sm font-medium">Ship it</span>
+              <span className="text-sm font-medium">Free shipping</span>
               <span className="text-xs text-muted-foreground">
                 Packed by hand and insured. Continental US only.
               </span>
             </span>
-            <span className="text-sm">Included</span>
+            <span className="text-sm">Free</span>
           </label>
           {pickupAllowed && (
             <label
@@ -279,7 +279,7 @@ export function CartCheckout() {
           </div>
           <div className="flex justify-between">
             <dt className="text-muted-foreground">Shipping</dt>
-            <dd>{effectiveMethod === "pickup" ? "Free pickup" : "Included"}</dd>
+            <dd>{effectiveMethod === "pickup" ? "Local pickup" : "Free"}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-2 font-display text-lg">
             <dt>Total</dt>

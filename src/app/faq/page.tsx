@@ -26,8 +26,8 @@ const faqs = [
   {
     question: "How much does shipping cost?",
     answer:
-      "Shipping is included in the price of every piece — the price you see " +
-      "is the price you pay. We ship within the continental US only (the " +
+      "Shipping is free on every piece — the price you see is the price " +
+      "you pay. We ship within the continental US only (the " +
       "lower 48 states and DC). Everything is packed by hand with generous " +
       "padding. Local pickup is also available — choose it at checkout and " +
       "we'll arrange a time.",

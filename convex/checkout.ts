@@ -54,7 +54,7 @@ export const start = action({
       const shippingLabel =
         args.shippingMethod === "pickup"
           ? reserved.pickupLabel
-          : "Shipping included (continental US)";
+          : "Free shipping (continental US)";
       // The address was collected and checked in the cart. Stripe is told it
       // rather than asked for it, so it cannot be changed to one we don't
       // ship to on the payment page.

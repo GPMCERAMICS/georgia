@@ -87,8 +87,8 @@ export function OrderConfirmation({ sessionId }: { sessionId: string | null }) {
               {order.shippingCents > 0
                 ? formatPrice(order.shippingCents)
                 : order.shippingMethod === "pickup"
-                  ? "Free pickup"
-                  : "Included"}
+                  ? "Local pickup"
+                  : "Free"}
             </dd>
           </div>
           {order.taxCents > 0 && (
