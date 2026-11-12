@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { action, internalQuery } from "../_generated/server";
 import { internal } from "../_generated/api";
-import { fromAddress, send } from "../emails";
+import { fromAddress, replyToAddress, send } from "../emails";
 import { requireAdmin } from "../lib/adminGuard";
 
 /** Actions have no database, so the admin check runs as a query. */
@@ -25,7 +25,7 @@ export const sendTest = action({
   handler: async (
     ctx,
     args,
-  ): Promise<{ from: string; results: { to: string; ok: boolean; error: string | null }[] }> => {
+  ): Promise<{ from: string; replyTo: string; results: { to: string; ok: boolean; error: string | null }[] }> => {
     await ctx.runQuery(internal.admin.emailTest.assertAdmin, {});
 
     const recipients = [...new Set(args.to.map((address) => address.trim()).filter(Boolean))];
@@ -64,6 +64,6 @@ export const sendTest = action({
         });
       }
     }
-    return { from: fromAddress(), results };
+    return { from: fromAddress(), replyTo: replyToAddress(), results };
   },
 });

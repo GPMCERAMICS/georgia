@@ -14,7 +14,7 @@ export function EmailTest() {
   const sendTest = useAction(api.admin.emailTest.sendTest);
   const [to, setTo] = useState("");
   const [sending, setSending] = useState(false);
-  const [outcome, setOutcome] = useState<{ from: string; results: Result[] } | null>(null);
+  const [outcome, setOutcome] = useState<{ from: string; replyTo: string; results: Result[] } | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
   async function handleSend() {
@@ -66,7 +66,9 @@ export function EmailTest() {
       )}
       {outcome && (
         <div className="grid gap-2 text-sm">
-          <p className="text-muted-foreground">Sent from: {outcome.from}</p>
+          <p className="text-muted-foreground">
+            Sent from: {outcome.from}. Replies go to: {outcome.replyTo}
+          </p>
           <ul className="grid gap-1.5">
             {outcome.results.map((result) => (
               <li key={result.to} className={result.ok ? "" : "text-destructive"}>

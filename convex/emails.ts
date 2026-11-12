@@ -17,6 +17,15 @@ import { getSettings } from "./settings";
 const money = (cents: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
+/**
+ * Where replies go when a message names nobody in particular. The sending
+ * address can live on a send-only subdomain, so replies are pointed at the
+ * real mailbox.
+ */
+export function replyToAddress(): string {
+  return process.env.RESEND_REPLY_TO ?? "info@gpmceramics.com";
+}
+
 export function fromAddress(): string {
   return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <onboarding@resend.dev>";
 }
@@ -43,7 +52,7 @@ export async function send(message: {
       to: message.to,
       subject: message.subject,
       text: message.text,
-      reply_to: message.replyTo,
+      reply_to: message.replyTo ?? replyToAddress(),
     }),
   });
   if (!response.ok) {
