@@ -80,15 +80,12 @@ export default function FaqPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-24">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-6 pb-24 pt-10">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-          FAQ
-        </p>
-        <h1 className="mt-5 text-balance font-display text-4xl leading-tight md:text-5xl">
+        <h1 className="text-balance text-center font-display text-4xl leading-tight md:text-5xl">
           Frequently asked questions
         </h1>
 
@@ -104,16 +101,16 @@ export default function FaqPage() {
                   +
                 </span>
               </summary>
-              <p className="pb-6 leading-relaxed text-muted-foreground">
+              <p className="pb-6 text-lg leading-relaxed">
                 {faq.answer}
               </p>
             </details>
           ))}
         </div>
 
-        <div className="mt-12 flex flex-wrap items-center gap-4">
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
           <p className="text-muted-foreground">Still have a question?</p>
-          <Button asChild variant="outline" className="rounded-full px-6">
+          <Button asChild variant="outline" size="lg" className="px-6">
             <Link href={`mailto:${site.email}`}>Email {site.email}</Link>
           </Button>
         </div>

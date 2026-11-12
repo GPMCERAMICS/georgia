@@ -30,7 +30,7 @@ export function ShopGrid({
 
   if (pieces.length === 0 && tag !== undefined) {
     return (
-      <p className="text-muted-foreground">
+      <p className="text-center text-lg">
         Nothing under this tag yet — new work is on the way.
       </p>
     );
@@ -38,15 +38,15 @@ export function ShopGrid({
 
   if (pieces.length === 0) {
     return (
-      <div className="flex flex-col items-start">
-        <h1 className="text-balance font-display text-4xl leading-tight md:text-5xl">
+      <div className="flex flex-col items-center text-center">
+        <h2 className="text-balance font-display text-3xl leading-tight md:text-4xl">
           Pieces are on their way
-        </h1>
-        <p className="mt-4 max-w-prose text-muted-foreground">
+        </h2>
+        <p className="mt-4 max-w-prose text-lg">
           Georgia is photographing and listing her available work now. In the
           meantime, commissions are open.
         </p>
-        <Button asChild className="mt-8 rounded-full px-5">
+        <Button asChild size="lg" className="mt-8 px-8">
           <Link href="/#commission">Commission a piece</Link>
         </Button>
       </div>
@@ -54,7 +54,7 @@ export function ShopGrid({
   }
 
   return (
-    <div className="grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid w-full gap-x-8 gap-y-16 sm:grid-cols-2">
       {pieces.map((piece) => (
         <ShopPieceCard key={piece._id} piece={piece} />
       ))}

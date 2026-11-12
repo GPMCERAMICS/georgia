@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { useQuery, usePreloadedQuery, type Preloaded } from "convex/react";
 import { Check } from "lucide-react";
 import { api } from "@convex/_generated/api";
@@ -19,8 +20,11 @@ import { useCatalogNow } from "./use-catalog-now";
  */
 export function PiecePurchasePanel({
   preloaded,
+  children,
 }: {
   preloaded: Preloaded<typeof api.pieces.getBySlug>;
+  /** Rendered between the price and the buttons (the description). */
+  children?: ReactNode;
 }) {
   const initial = usePreloadedQuery(preloaded);
   const now = useCatalogNow();
@@ -40,14 +44,16 @@ export function PiecePurchasePanel({
   const line = availabilityLine(piece);
 
   return (
-    <div className="mt-8">
-      <p className="font-display text-3xl text-primary">{formatPrice(piece.priceCents)}</p>
-      {line && !held && <p className="mt-2 text-sm font-medium text-muted-foreground">{line}</p>}
+    <div className="mt-5 flex w-full flex-col items-center">
+      <p className="text-2xl">{formatPrice(piece.priceCents)}</p>
+      {line && !held && <p className="mt-1 text-muted-foreground">{line}</p>}
 
-      <div className="mt-6 flex flex-col items-start gap-3">
+      {children}
+
+      <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3">
         {sold ? (
           <>
-            <Button asChild className="rounded-full px-6">
+            <Button asChild size="lg" className="h-14 px-6">
               <Link href={`/commissions?piece=${piece.slug}`}>Commission something like this</Link>
             </Button>
             <p className="text-sm text-muted-foreground">
@@ -56,11 +62,11 @@ export function PiecePurchasePanel({
           </>
         ) : held ? (
           <>
-            <div className="flex flex-wrap gap-3">
-              <Button disabled className="rounded-full px-6">
+            <div className="flex flex-col gap-3">
+              <Button disabled size="lg" className="h-14 px-6">
                 On hold
               </Button>
-              <Button asChild variant="outline" className="rounded-full px-6">
+              <Button asChild variant="outline" size="lg" className="h-14 px-6">
                 <Link href={`/commissions?piece=${piece.slug}`}>Ask about a custom version</Link>
               </Button>
             </div>
@@ -70,20 +76,20 @@ export function PiecePurchasePanel({
           </>
         ) : inCart ? (
           <>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild className="rounded-full px-6">
+            <div className="flex flex-col gap-3">
+              <Button asChild size="lg" className="h-14 px-6">
                 <Link href="/cart">Check out</Link>
               </Button>
-              <Button variant="outline" className="rounded-full px-6" onClick={cart.open}>
+              <Button variant="outline" size="lg" className="h-14 px-6" onClick={cart.open}>
                 <Check /> In your cart
               </Button>
             </div>
           </>
         ) : (
           <>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3">
               <Button
-                className="rounded-full px-6"
+                size="lg" className="h-14 px-6"
                 onClick={() => {
                   cart.add(piece._id);
                   cart.open();
@@ -91,7 +97,7 @@ export function PiecePurchasePanel({
               >
                 Add to cart
               </Button>
-              <Button asChild variant="outline" className="rounded-full px-6">
+              <Button asChild variant="outline" size="lg" className="h-14 px-6">
                 <Link href={`/commissions?piece=${piece.slug}`}>Ask about a custom version</Link>
               </Button>
             </div>

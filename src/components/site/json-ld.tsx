@@ -26,8 +26,14 @@ export function JsonLd({ pieces, tags }: { pieces: PublicPiece[]; tags: PublicTa
       email: site.email,
       image: `${site.url}/opengraph-image`,
       priceRange: "$$",
-      // PLACEHOLDER: address omitted until the real city/state arrive — re-add
-      // a PostalAddress from site.location for local SEO once known.
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: site.location.publishStreet ? site.location.street : undefined,
+        addressLocality: site.location.city,
+        addressRegion: site.location.region,
+        postalCode: site.location.postalCode,
+        addressCountry: site.location.country,
+      },
       sameAs: [
         site.social.facebook,
         site.social.instagram,

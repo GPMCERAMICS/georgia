@@ -173,7 +173,7 @@ export function InquiriesBoard() {
             type="button"
             onClick={() => setFilter(f.value)}
             className={cn(
-              "rounded-full border px-3.5 py-1 text-sm transition-colors",
+              "chip rounded-full border px-3.5 py-1 text-sm transition-colors",
               f.value === filter
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border text-muted-foreground hover:text-foreground",

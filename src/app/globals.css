@@ -132,11 +132,15 @@
   * {
     @apply border-border outline-ring/50;
   }
-  /* No rounded corners anywhere, including pills and circles. */
-  *,
+  /* Square corners everywhere. Chips (counts, status labels, tags) are the
+     one exception: add the `chip` class and they are fully rounded. */
+  *:not(.chip),
   ::before,
   ::after {
     border-radius: 0 !important;
+  }
+  .chip {
+    border-radius: 9999px;
   }
   body {
     @apply bg-background text-foreground;

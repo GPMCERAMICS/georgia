@@ -1,88 +1,89 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
-import { Logo } from "./logo";
+
+const SITE_MAP = [
+  { href: "/shop", label: "Shop" },
+  { href: "/commissions", label: "Commissions" },
+  { href: "/contact", label: "About" },
+  { href: "/faq", label: "FAQ" },
+];
+
+const linkClass = "underline underline-offset-4 hover:no-underline";
 
 export function SiteFooter() {
   const year = 2026; // static to keep the page fully server-cacheable
   const domain = new URL(site.url).hostname.replace(/^www\./, "");
+  const social = [
+    { href: site.social.facebook, label: "Facebook" },
+    { href: site.social.instagram, label: "Instagram" },
+    { href: site.social.pinterest, label: "Pinterest" },
+  ].filter((item) => item.href);
 
   return (
-    <footer className="mt-auto border-t border-border/60">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-14 md:flex-row md:items-end md:justify-between">
+    <footer className="mt-auto bg-secondary">
+      <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-16 md:grid-cols-[1.2fr_2fr] md:px-10">
         <div>
-          <div className="flex items-center gap-3">
-            <Logo className="h-12 w-auto text-primary" />
-            <div>
-              <p className="font-display text-2xl leading-none">Georgia Perkins</p>
-              <p className="mt-1 text-sm uppercase tracking-[0.28em] text-muted-foreground">
-                Pottery
-              </p>
-            </div>
-          </div>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Handmade artisanal ceramics &mdash; plates, garden pieces, and custom
-            commissions from coastal Georgia.
+          <p className="font-display text-4xl leading-none">Georgia Perkins</p>
+          <p className="mt-4 max-w-xs leading-relaxed">
+            Handmade, hand painted ceramics and custom commissions from{" "}
+            {site.location.city}, Georgia.
           </p>
         </div>
 
-        <div className="flex flex-col gap-3 text-sm">
-          <a
-            href={`mailto:${site.email}`}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {site.email}
-          </a>
-          <div className="flex gap-5">
-            {site.social.facebook && (
-              <a
-                href={site.social.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Facebook
-              </a>
-            )}
-            {site.social.instagram && (
-              <a
-                href={site.social.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Instagram
-              </a>
-            )}
-            {site.social.pinterest && (
-              <a
-                href={site.social.pinterest}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Pinterest
-              </a>
-            )}
+        <div className="grid gap-10 sm:grid-cols-3">
+          <div>
+            <h2 className="text-lg font-medium">Site Map</h2>
+            <ul className="mt-4 space-y-1.5">
+              {SITE_MAP.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className={linkClass}>
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <Link
-            href="/#commission"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Commission a piece
-          </Link>
-          <Link
-            href="/faq"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            FAQ
-          </Link>
+
+          {social.length > 0 && (
+            <div>
+              <h2 className="text-lg font-medium">Follow Us</h2>
+              <ul className="mt-4 space-y-1.5">
+                {social.map((item) => (
+                  <li key={item.label}>
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={linkClass}
+                    >
+                      {item.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <h2 className="text-lg font-medium">Contact Us</h2>
+            <ul className="mt-4 space-y-1.5">
+              <li>
+                <a href={`mailto:${site.email}`} className={linkClass}>
+                  {site.email}
+                </a>
+              </li>
+              <li>
+                <Link href="/commissions" className={linkClass}>
+                  Commission a piece
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
-      <div className="border-t border-border/60">
-        <div className="mx-auto max-w-6xl px-6 py-5 text-xs text-muted-foreground">
-          &copy; {year} {domain}. Each piece made by hand.
-        </div>
+      <div className="mx-auto max-w-[1400px] px-6 pb-10 text-sm md:px-10">
+        <span className="font-[system-ui]">&copy;</span> {year} {domain}. Each piece made by hand.
       </div>
     </footer>
   );

@@ -12,9 +12,8 @@ export default function CartPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 md:py-24">
-        <p className="text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">Cart</p>
-        <h1 className="mt-5 font-display text-4xl leading-tight md:text-5xl">Your pieces</h1>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-24 pt-10">
+        <h1 className="text-center font-display text-4xl leading-tight md:text-5xl">Your Cart</h1>
         <div className="mt-10">
           <CartCheckout />
         </div>

@@ -5,10 +5,10 @@ import { site } from "@/lib/site";
 
 export function About() {
   return (
-    <section id="about" className="border-t border-border/60 bg-secondary/40">
+    <section id="about" className="bg-secondary">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-28">
         <div className="order-2 md:order-1">
-          <div className="mx-auto max-w-md overflow-hidden rounded-2xl border border-border shadow-sm">
+          <div className="mx-auto max-w-md overflow-hidden">
             <Image
               src="/gpm.webp"
               alt="Georgia Perkins-Miller, the maker behind Georgia Perkins Pottery"
@@ -21,24 +21,16 @@ export function About() {
         </div>
 
         <div className="order-1 md:order-2">
-          <p className="mb-5 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground">
-            The maker
-          </p>
           <h2 className="text-balance font-display text-4xl leading-tight md:text-5xl">
             {site.about.heading}
           </h2>
-          <div className="mt-6 space-y-5 text-lg leading-relaxed text-muted-foreground">
+          <div className="mt-6 space-y-5 text-lg leading-relaxed">
             {site.about.body.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
           </div>
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="mt-8 rounded-full border-primary/30 bg-transparent px-7"
-          >
-            <Link href="/contact">Learn more</Link>
+          <Button asChild size="lg" className="mt-8 px-9">
+            <Link href="/contact">Learn More</Link>
           </Button>
         </div>
       </div>

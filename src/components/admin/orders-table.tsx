@@ -46,7 +46,7 @@ export function OrdersTable() {
               router.replace(filter.value ? `/admin/orders?status=${filter.value}` : "/admin/orders")
             }
             className={cn(
-              "rounded-full border px-3.5 py-1 text-sm transition-colors",
+              "chip rounded-full border px-3.5 py-1 text-sm transition-colors",
               filter.value === status
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border text-muted-foreground hover:text-foreground",

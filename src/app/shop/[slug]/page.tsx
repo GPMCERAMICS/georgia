@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
+import { PieceGallery } from "@/components/shop/piece-gallery";
 import { PiecePurchasePanel } from "@/components/shop/piece-purchase-panel";
 import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -50,7 +50,6 @@ export default async function PiecePage({ params }: Params) {
   const piece = preloadedQueryResult(preloaded);
   if (!piece) notFound();
 
-  const [mainImage, ...restImages] = piece.imageUrls;
   const pieceTags = tags.filter((tag) => piece.tags.includes(tag.slug));
 
   const details: { label: string; value: string }[] = [];
@@ -80,84 +79,52 @@ export default async function PiecePage({ params }: Params) {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-16 md:py-24">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-24 pt-6 md:px-10 md:pt-10">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <div className="grid gap-10 md:grid-cols-2 md:gap-14">
-          <div className="flex flex-col gap-4">
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-card">
-              {mainImage ? (
-                <Image
-                  src={mainImage}
-                  alt={piece.title}
-                  fill
-                  priority
-                  sizes="(min-width: 768px) 50vw, 100vw"
-                  className="object-cover"
-                />
-              ) : (
+        <nav aria-label="Breadcrumb" className="text-lg">
+          <Link href="/shop" className="hover:underline hover:underline-offset-4">
+            Shop
+          </Link>
+          <span aria-hidden className="mx-2 font-[system-ui]">
+            ›
+          </span>
+          <span>{piece.title}</span>
+        </nav>
+
+        <div className="mt-8 grid gap-12 md:grid-cols-2 md:gap-16">
+          <div className="md:order-2">
+            {piece.imageUrls.length > 0 ? (
+              <PieceGallery images={piece.imageUrls} title={piece.title} />
+            ) : (
+              <div className="aspect-square bg-muted">
                 <PlaceholderVessel
                   shape={placeholderShape(piece.slug)}
                   label={piece.title}
                   className="h-full w-full"
                 />
-              )}
-            </div>
-            {restImages.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
-                {restImages.map((url) => (
-                  <div
-                    key={url}
-                    className="relative aspect-square overflow-hidden rounded-xl border border-border bg-card"
-                  >
-                    <Image
-                      src={url}
-                      alt={piece.title}
-                      fill
-                      sizes="(min-width: 768px) 16vw, 33vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
               </div>
             )}
           </div>
 
-          <div className="flex flex-col items-start">
-            {pieceTags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {pieceTags.map((tag) => (
-                  <Link
-                    key={tag.slug}
-                    href={`/shop?tag=${tag.slug}`}
-                    className="rounded-full border border-border px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-            <h1 className="mt-4 text-balance font-display text-4xl leading-tight md:text-5xl">
+          <div className="flex flex-col items-center justify-center text-center md:order-1">
+            <h1 className="max-w-xl text-balance font-display text-4xl leading-tight md:text-5xl">
               {piece.title}
             </h1>
-            {piece.size && (
-              <p className="mt-3 text-sm uppercase tracking-wider text-muted-foreground">
-                {piece.size}
-              </p>
-            )}
+            {piece.size && <p className="mt-3 text-muted-foreground">{piece.size}</p>}
 
-            <PiecePurchasePanel preloaded={preloaded} />
-
-            <div className="mt-10 max-w-prose space-y-4 text-muted-foreground">
-              {piece.description.split("\n\n").map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-            </div>
+            <PiecePurchasePanel preloaded={preloaded}>
+              <div className="mx-auto mt-6 max-w-xl space-y-4 text-lg leading-relaxed">
+                {piece.description.split("\n\n").map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </PiecePurchasePanel>
 
             {details.length > 0 && (
-              <dl className="mt-10 w-full max-w-prose divide-y divide-border border-y border-border text-sm">
+              <dl className="mt-12 w-full max-w-md divide-y divide-border border-y border-border text-left">
                 {details.map((detail) => (
                   <div key={detail.label} className="grid grid-cols-[120px_1fr] gap-4 py-3">
                     <dt className="text-muted-foreground">{detail.label}</dt>
@@ -165,6 +132,23 @@ export default async function PiecePage({ params }: Params) {
                   </div>
                 ))}
               </dl>
+            )}
+
+            {pieceTags.length > 0 && (
+              <p className="mt-8 text-muted-foreground">
+                More in{" "}
+                {pieceTags.map((tag, i) => (
+                  <span key={tag.slug}>
+                    {i > 0 && ", "}
+                    <Link
+                      href={`/shop?tag=${tag.slug}`}
+                      className="text-foreground underline underline-offset-4 hover:no-underline"
+                    >
+                      {tag.name}
+                    </Link>
+                  </span>
+                ))}
+              </p>
             )}
           </div>
         </div>

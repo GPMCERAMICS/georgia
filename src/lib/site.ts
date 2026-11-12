@@ -15,10 +15,15 @@ export const site = {
     "Handmade artisanal pottery by Georgia Perkins — one-of-a-kind plates, " +
     "garden pieces, and custom commissions, each thrown and glazed by hand.",
 
-  // PLACEHOLDER — supply the real location; drives local SEO + LocalBusiness JSON-LD.
+  // Studio location; drives local SEO via the LocalBusiness JSON-LD. The
+  // street line is published only when `publishStreet` is true — city, state
+  // and ZIP always are.
   location: {
-    city: "PLACEHOLDER City",
-    region: "PLACEHOLDER State",
+    street: "214 Angler's Ln",
+    publishStreet: false,
+    city: "St. Marys",
+    region: "GA",
+    postalCode: "31558",
     country: "US",
   },
 

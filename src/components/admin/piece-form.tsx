@@ -325,8 +325,8 @@ function PieceFormFields({
                         onClick={() => toggleTag(tag.slug)}
                         className={
                           on
-                            ? "rounded-full border border-primary bg-primary px-3 py-1 text-sm text-primary-foreground"
-                            : "rounded-full border border-border px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
+                            ? "chip rounded-full border border-primary bg-primary px-3 py-1 text-sm text-primary-foreground"
+                            : "chip rounded-full border border-border px-3 py-1 text-sm text-muted-foreground hover:text-foreground"
                         }
                       >
                         {tag.name}

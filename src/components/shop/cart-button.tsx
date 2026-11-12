@@ -1,26 +1,28 @@
 "use client";
 
-import { ShoppingBag } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ShoppingCart } from "lucide-react";
 import { useCart } from "./cart-provider";
 
+/** Cart icon with a count chip on its bottom-right corner. */
 export function CartButton() {
   const { ids, ready, open } = useCart();
   const count = ready ? ids.length : 0;
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="relative rounded-full px-3"
+    <button
+      type="button"
+      className="relative flex size-10 items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-current"
       aria-label={`Cart, ${count} item${count === 1 ? "" : "s"}`}
       onClick={open}
     >
-      <ShoppingBag />
+      <ShoppingCart className="size-6" />
       {count > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+        <span
+          aria-hidden
+          className="chip absolute -bottom-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center bg-primary px-1 text-xs font-medium text-primary-foreground ring-2 ring-background"
+        >
           {count}
         </span>
       )}
-    </Button>
+    </button>
   );
 }

@@ -17,7 +17,7 @@ export const DEFAULT_SETTINGS: Omit<Doc<"settings">, "_id" | "_creationTime"> =
     },
     pickup: {
       enabled: true,
-      label: "Local pickup (coastal Georgia)",
+      label: "Local pickup (St. Marys, GA)",
       instructions:
         "Georgia will email you to arrange a pickup time once your order is ready.",
     },
