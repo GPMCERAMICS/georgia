@@ -27,7 +27,7 @@ export function replyToAddress(): string {
 }
 
 export function fromAddress(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <onboarding@resend.dev>";
+  return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <info@sales.gpmceramics.com>";
 }
 
 export async function send(message: {

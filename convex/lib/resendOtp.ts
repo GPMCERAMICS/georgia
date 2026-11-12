@@ -20,7 +20,7 @@ export const ResendOTPPasswordReset = Resend({
       throw new Error("RESEND_API_KEY is not set; cannot send a reset code");
     }
     const from =
-      process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <onboarding@resend.dev>";
+      process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <info@sales.gpmceramics.com>";
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
