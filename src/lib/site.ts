@@ -30,7 +30,7 @@ export const site = {
   },
 
   // Public contact address, shown in the footer and on contact pages.
-  email: "hello@gpmceramics.com",
+  email: "info@gpmceramics.com",
 
   // Canonical production URL — the apex 308s to www.
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.gpmceramics.com",
