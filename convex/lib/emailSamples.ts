@@ -52,7 +52,7 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
     shippingMethod: "ship",
     addressLines: ["Pat Morgan", "128 Live Oak Lane", "Savannah, GA 31401"],
     pickupLabel: "Local pickup (St. Marys, GA)",
-    pickupInstructions: "Georgia will email you to arrange a pickup time once your order is ready.",
+    pickupInstructions: "I will email you to arrange a pickup time once your order is ready.",
     carrier: null,
     trackingNumber: null,
   };

@@ -6,6 +6,9 @@
  * `emails.ts`), the samples sent from the dashboard, and the review page —
  * so what is approved is exactly what goes out.
  *
+ * Voice: customer emails are written in the first person, as Georgia. It is
+ * a one-person studio, so "I", never "we" or "Georgia will".
+ *
  * Email clients ignore stylesheets and web fonts, so everything is tables
  * with inline styles and system typefaces; the wordmark is an image.
  */
@@ -212,7 +215,7 @@ ${body}
 </html>`;
 }
 
-const ORDER_NOTE = "You are receiving this email because you placed an order with us.";
+const ORDER_NOTE = "You are receiving this email because you placed an order with GPM Ceramics.";
 
 // ---------- 1. Order confirmation (customer) ----------
 
@@ -220,14 +223,14 @@ export function orderConfirmation(order: OrderData): Email {
   const pickup = order.shippingMethod === "pickup";
   const madeToOrder = order.items.some((item) => item.note);
   const next = pickup
-    ? `You chose local pickup. ${MAKER} will email you as soon as your order is ready to collect.`
+    ? "You chose local pickup. I will email you as soon as your order is ready to collect."
     : madeToOrder
-      ? `Part of your order is made for you after you order, so it takes a little longer. ${MAKER} will email you with tracking as soon as it ships.`
-      : `${MAKER} will pack your order by hand and email you with tracking as soon as it ships.`;
+      ? "Part of your order is made for you after you order, so it takes a little longer. I will email you with tracking as soon as it ships."
+      : "I will pack your order by hand and email you with tracking as soon as it ships.";
   const body = [
     heading("Thank you for your order"),
     p(`Hi ${esc(firstName(order.name))},`),
-    p(`Your order is confirmed. Every piece is made and painted by hand, and yours is now set aside for you.`),
+    p(`Your order is confirmed. I make and paint every piece by hand, and yours is now set aside for you.`),
     p(esc(next)),
     subheading(`Order ${order.orderNumber}`),
     orderTable(order, true),
@@ -248,7 +251,7 @@ export function orderConfirmation(order: OrderData): Email {
     text: [
       `Hi ${firstName(order.name)},`,
       "",
-      "Thank you for your order. It is confirmed, and your pieces are set aside for you.",
+      "Thank you for your order. It is confirmed. I make and paint every piece by hand, and yours is now set aside for you.",
       next,
       "",
       `Order ${order.orderNumber}`,
@@ -326,12 +329,12 @@ export function orderShipped(order: OrderData): Email {
   const body = [
     heading("Your order is on its way"),
     p(`Hi ${esc(firstName(order.name))},`),
-    p(`Good news: order ${esc(order.orderNumber)} has been packed by hand and handed to the carrier.`),
+    p(`Good news: I have packed order ${esc(order.orderNumber)} by hand and handed it to the carrier.`),
     tracking.html,
     subheading("In this shipment"),
     orderTable(order, false),
     panel("Shipping to", (order.addressLines ?? []).map(esc).join("<br>")),
-    p(`Handmade ceramics are sturdy but not indestructible. Please unpack carefully, and if anything arrives less than perfect, reply to this email with a photo and we will make it right.`),
+    p(`Handmade ceramics are sturdy but not indestructible. Please unpack carefully, and if anything arrives less than perfect, reply to this email with a photo and I will make it right.`),
     signOff,
   ].join("\n");
   return {
@@ -347,14 +350,14 @@ export function orderShipped(order: OrderData): Email {
     text: [
       `Hi ${firstName(order.name)},`,
       "",
-      `Order ${order.orderNumber} has been packed by hand and handed to the carrier.`,
+      `I have packed order ${order.orderNumber} by hand and handed it to the carrier.`,
       "",
       tracking.text,
       itemsText(order.items),
       "",
       `Shipping to:\n${(order.addressLines ?? []).join("\n")}`,
       "",
-      "Please unpack carefully. If anything arrives less than perfect, reply to this email with a photo and we will make it right.",
+      "Please unpack carefully. If anything arrives less than perfect, reply to this email with a photo and I will make it right.",
       "",
       signOffText,
     ].join("\n"),
@@ -435,15 +438,15 @@ export function orderDelivered(order: OrderData): Email {
   const pickup = order.shippingMethod === "pickup";
   const careUrl = `${order.siteUrl}/care`;
   const opening = pickup
-    ? `Thank you for collecting order ${order.orderNumber}. We hope your new piece has already found its place.`
-    : `Order ${order.orderNumber} has been delivered. We hope it arrived safely and has already found its place.`;
+    ? `Thank you for collecting order ${order.orderNumber}. I hope your new piece has already found its place.`
+    : `Order ${order.orderNumber} has been delivered. I hope it arrived safely and has already found its place.`;
   const body = [
     heading(pickup ? "Enjoy your new piece" : "Your order has arrived"),
     p(`Hi ${esc(firstName(order.name))},`),
     p(esc(opening)),
-    p(`A little care keeps hand painted ceramics bright for decades. Our care guide covers washing, everyday use, and looking after pieces that live outdoors.`),
+    p(`A little care keeps hand painted ceramics bright for decades. My care guide covers washing, everyday use, and looking after pieces that live outdoors.`),
     button(careUrl, "Read the care guide"),
-    p(`If anything is not right, reply to this email with a photo and we will sort it out.`),
+    p(`If anything is not right, reply to this email with a photo and I will sort it out.`),
     p(`Thank you for supporting handmade work.`),
     signOff,
   ].join("\n");
@@ -460,10 +463,10 @@ export function orderDelivered(order: OrderData): Email {
       "",
       opening,
       "",
-      "A little care keeps hand painted ceramics bright for decades. Our care guide covers washing, everyday use, and looking after pieces that live outdoors:",
+      "A little care keeps hand painted ceramics bright for decades. My care guide covers washing, everyday use, and looking after pieces that live outdoors:",
       careUrl,
       "",
-      "If anything is not right, reply to this email with a photo and we will sort it out.",
+      "If anything is not right, reply to this email with a photo and I will sort it out.",
       "",
       "Thank you for supporting handmade work.",
       "",
@@ -477,8 +480,8 @@ export function orderDelivered(order: OrderData): Email {
 export function orderRefunded(order: OrderData, refund: { amountCents: number; full: boolean }): Email {
   const amount = money(refund.amountCents);
   const lead = refund.full
-    ? `We have refunded order ${order.orderNumber} in full: ${amount}.`
-    : `We have refunded ${amount} of order ${order.orderNumber}.`;
+    ? `I have refunded order ${order.orderNumber} in full: ${amount}.`
+    : `I have refunded ${amount} of order ${order.orderNumber}.`;
   const body = [
     heading(refund.full ? "Your order has been refunded" : "A refund is on its way"),
     p(`Hi ${esc(firstName(order.name))},`),
@@ -548,7 +551,7 @@ export function cartReminder(data: ReminderData): Email {
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;border-top:1px solid ${RULE};">${rows}</table>`,
     p(esc(scarcity)),
     button(cta, one ? "Take another look" : "Back to the shop"),
-    p(`Have a question before you decide? Reply to this email and ${MAKER} will answer it herself.`),
+    p(`Have a question before you decide? Reply to this email and I will answer it myself.`),
     signOff,
   ].join("\n");
   return {
@@ -566,8 +569,8 @@ export function cartReminder(data: ReminderData): Email {
       body,
       footerNote:
         data.attempt === 1
-          ? "You are receiving this because you started a checkout with us. We send at most two reminders."
-          : "This is the last reminder we will send about this checkout.",
+          ? "You are receiving this because you started a checkout at GPM Ceramics. You will get at most two reminders."
+          : "This is the last reminder you will get about this checkout.",
       unsubscribeUrl: data.unsubscribeUrl,
     }),
     text: [
@@ -579,7 +582,7 @@ export function cartReminder(data: ReminderData): Email {
       "",
       scarcity,
       "",
-      `Have a question before you decide? Reply to this email and ${MAKER} will answer it herself.`,
+      `Have a question before you decide? Reply to this email and I will answer it myself.`,
       "",
       signOffText,
       "",
@@ -603,29 +606,29 @@ export type InquiryData = {
 export function commissionReceived(inquiry: InquiryData): Email {
   const quoted = esc(inquiry.message).replace(/\n/g, "<br>");
   const body = [
-    heading("We have your commission request"),
+    heading("I have your commission request"),
     p(`Hi ${esc(firstName(inquiry.name))},`),
-    p(`Thank you for getting in touch about a custom piece. ${MAKER} reads every request herself and will reply within a few days to talk through ideas, timing and a quote.`),
-    p(`There is nothing to pay until you have agreed a design and a price together.`),
-    panel("What you sent us", quoted),
+    p(`Thank you for getting in touch about a custom piece. I read every request myself and will reply within a few days to talk through ideas, timing and a quote.`),
+    p(`There is nothing to pay until we have agreed a design and a price together.`),
+    panel("What you sent", quoted),
     p(`Thought of something to add? Just reply to this email.`),
     signOff,
   ].join("\n");
   return {
-    subject: "We have your commission request",
+    subject: "I have your commission request",
     html: layout({
       siteUrl: inquiry.siteUrl,
-      preheader: `${MAKER} will reply within a few days.`,
+      preheader: "I will reply within a few days.",
       body,
-      footerNote: "You are receiving this email because you sent us a commission request.",
+      footerNote: "You are receiving this email because you sent GPM Ceramics a commission request.",
     }),
     text: [
       `Hi ${firstName(inquiry.name)},`,
       "",
-      `Thank you for getting in touch about a custom piece. ${MAKER} reads every request herself and will reply within a few days to talk through ideas, timing and a quote.`,
-      "There is nothing to pay until you have agreed a design and a price together.",
+      `Thank you for getting in touch about a custom piece. I read every request myself and will reply within a few days to talk through ideas, timing and a quote.`,
+      "There is nothing to pay until we have agreed a design and a price together.",
       "",
-      "What you sent us:",
+      "What you sent:",
       inquiry.message,
       "",
       "Thought of something to add? Just reply to this email.",
@@ -685,7 +688,7 @@ export function newsletterWelcome(data: { siteUrl: string; unsubscribeUrl: strin
   const body = [
     heading("You are on the list"),
     p(`Thank you for signing up. You will be the first to hear when new pieces come out of the kiln, when commissions open, and the occasional story from the studio.`),
-    p(`We write only when there is something worth sharing.`),
+    p(`I write only when there is something worth sharing.`),
     button(`${data.siteUrl}/shop`, "See what is in the shop"),
     signOff,
   ].join("\n");
@@ -700,7 +703,7 @@ export function newsletterWelcome(data: { siteUrl: string; unsubscribeUrl: strin
     }),
     text: [
       "Thank you for signing up. You will be the first to hear when new pieces come out of the kiln, when commissions open, and the occasional story from the studio.",
-      "We write only when there is something worth sharing.",
+      "I write only when there is something worth sharing.",
       "",
       `See what is in the shop: ${data.siteUrl}/shop`,
       "",
