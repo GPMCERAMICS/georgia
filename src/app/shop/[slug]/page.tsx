@@ -168,7 +168,7 @@ export default async function PiecePage({ params }: Params) {
                     {i > 0 && ", "}
                     <Link
                       href={`/shop?tag=${tag.slug}`}
-                      className="text-foreground underline-offset-4 hover:underline"
+                      className="text-foreground underline underline-offset-4 hover:no-underline"
                     >
                       {tag.name}
                     </Link>

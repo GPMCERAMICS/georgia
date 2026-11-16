@@ -88,11 +88,11 @@ export default function CarePage() {
 
         <p className="mt-14 border-t border-border pt-8 text-lg leading-relaxed">
           A question about a particular piece?{" "}
-          <a href={`mailto:${site.email}`} className="text-primary underline-offset-4 hover:underline">
+          <a href={`mailto:${site.email}`} className="text-primary underline underline-offset-4 hover:no-underline">
             {site.email}
           </a>
           , or see the{" "}
-          <Link href="/faq" className="text-primary underline-offset-4 hover:underline">
+          <Link href="/faq" className="text-primary underline underline-offset-4 hover:no-underline">
             FAQ
           </Link>
           .
