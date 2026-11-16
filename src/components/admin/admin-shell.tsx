@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useRouter } from "next/navigation";
 import {
+  BookOpen,
   ExternalLink,
   Inbox,
   LayoutDashboard,
@@ -32,6 +33,7 @@ const NAV = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/subscribers", label: "Newsletter", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/admin/guide", label: "How it works", icon: BookOpen },
 ];
 
 /**
