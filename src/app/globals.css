@@ -145,6 +145,34 @@
   body {
     @apply bg-background text-foreground;
   }
+  /*
+   * Tailwind 4 leaves buttons with the default arrow cursor. Anything that
+   * can be clicked gets the hand; anything disabled gets the "no" cursor.
+   */
+  a[href],
+  button,
+  [role="button"],
+  [role="switch"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  summary,
+  select,
+  label[for],
+  label:has(input, button, select),
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="submit"],
+  input[type="button"] {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled="true"],
+  [data-disabled],
+  label:has(:disabled) {
+    cursor: not-allowed;
+  }
   html {
     @apply font-sans;
     scroll-behavior: smooth;
