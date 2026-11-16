@@ -26,6 +26,7 @@ export function OrderDetail({ id }: { id: string }) {
   const order = useQuery(api.admin.orders.get, { id: id as Id<"orders"> });
   const markShipped = useMutation(api.admin.orders.markShipped);
   const markDelivered = useMutation(api.admin.orders.markDelivered);
+  const updateTracking = useMutation(api.admin.orders.updateTracking);
   const cancel = useMutation(api.admin.orders.cancel);
   const updateNotes = useMutation(api.admin.orders.updateNotes);
 
@@ -33,6 +34,9 @@ export function OrderDetail({ id }: { id: string }) {
   const [tracking, setTracking] = useState("");
   // A draft only exists while she is typing; otherwise the live value shows.
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
+  // Same idea for a tracking correction on an order already shipped.
+  const [carrierDraft, setCarrierDraft] = useState<string | null>(null);
+  const [trackingDraft, setTrackingDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (order === undefined) {
@@ -47,7 +51,19 @@ export function OrderDetail({ id }: { id: string }) {
     return <p className="text-muted-foreground">Order not found.</p>;
   }
 
-  const meta = orderStatusMeta[order.status];
+  const pickup = order.shippingMethod === "pickup";
+  // A pickup order moves through the same statuses under friendlier names.
+  const meta =
+    pickup && order.status === "shipped"
+      ? { ...orderStatusMeta.shipped, label: "Ready for pickup" }
+      : pickup && order.status === "delivered"
+        ? { ...orderStatusMeta.delivered, label: "Picked up" }
+        : orderStatusMeta[order.status];
+  const newCarrier = carrierDraft ?? order.carrier ?? "";
+  const newTracking = trackingDraft ?? order.trackingNumber ?? "";
+  const trackingDirty =
+    newCarrier.trim() !== (order.carrier ?? "") ||
+    newTracking.trim() !== (order.trackingNumber ?? "");
   const address = order.shippingAddress;
   const notes = notesDraft ?? order.notes;
   const notesDirty = notesDraft !== null && notesDraft !== order.notes;
@@ -88,9 +104,16 @@ export function OrderDetail({ id }: { id: string }) {
               variant="outline"
               className="rounded-full"
               disabled={busy}
-              onClick={() => run("Marked delivered", () => markDelivered({ id: order._id }))}
+              onClick={() =>
+                run(
+                  pickup
+                    ? "Marked picked up — thank-you email sent"
+                    : "Marked delivered — care email sent",
+                  () => markDelivered({ id: order._id }),
+                )
+              }
             >
-              Mark delivered
+              {pickup ? "Mark picked up" : "Mark delivered"}
             </Button>
           )}
           {order.status === "pending" && (
@@ -157,24 +180,47 @@ export function OrderDetail({ id }: { id: string }) {
                 <dt>Total</dt>
                 <dd>{money(order.totalCents)}</dd>
               </div>
+              {(order.refundedCents ?? 0) > 0 && (
+                <div className="flex justify-between text-destructive">
+                  <dt>Refunded</dt>
+                  <dd>-{money(order.refundedCents ?? 0)}</dd>
+                </div>
+              )}
             </dl>
           </section>
 
-          {order.status === "paid" && (
-            <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
-              <h2 className="font-display text-xl">
-                {order.shippingMethod === "pickup" ? "Hand it over" : "Ship it"}
-              </h2>
+          {order.status === "paid" && pickup && (
+            <section className="border border-primary/30 bg-primary/5 p-5">
+              <h2 className="font-display text-xl">Ready for pickup?</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {order.shippingMethod === "pickup"
-                  ? "Once the customer has collected it, mark it shipped so the record closes out."
-                  : "Add the tracking number and the customer gets a shipping email."}
+                When the order is wrapped and ready, mark it ready. The customer gets an email
+                asking them to arrange a time.
+              </p>
+              <Button
+                className="mt-4"
+                disabled={busy}
+                onClick={() =>
+                  run("Marked ready — customer emailed", () =>
+                    markShipped({ id: order._id, carrier: "", trackingNumber: "" }),
+                  )
+                }
+              >
+                Mark ready for pickup
+              </Button>
+            </section>
+          )}
+
+          {order.status === "paid" && !pickup && (
+            <section className="border border-primary/30 bg-primary/5 p-5">
+              <h2 className="font-display text-xl">Ship it</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Add the tracking number and the customer gets a shipping email.
               </p>
               <form
                 className="mt-4 grid gap-3 sm:grid-cols-[140px_1fr_auto]"
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void run("Marked shipped", () =>
+                  void run("Marked shipped — customer emailed", () =>
                     markShipped({ id: order._id, carrier, trackingNumber: tracking }),
                   );
                 }}
@@ -188,12 +234,62 @@ export function OrderDetail({ id }: { id: string }) {
                   <Input
                     id="tracking"
                     value={tracking}
-                    placeholder={order.shippingMethod === "pickup" ? "Optional" : "9400 …"}
+                    placeholder="9400 …"
                     onChange={(e) => setTracking(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="self-end rounded-full" disabled={busy}>
+                <Button type="submit" className="self-end" disabled={busy}>
                   Mark shipped
+                </Button>
+              </form>
+            </section>
+          )}
+
+          {order.status === "shipped" && !pickup && (
+            <section className="border border-border bg-card p-5">
+              <h2 className="font-display text-xl">Tracking</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Fix a wrong carrier or tracking number here. Saving a change emails the customer
+                the new details.
+              </p>
+              <form
+                className="mt-4 grid gap-3 sm:grid-cols-[140px_1fr_auto]"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void run("Tracking updated — customer emailed", async () => {
+                    await updateTracking({
+                      id: order._id,
+                      carrier: newCarrier,
+                      trackingNumber: newTracking,
+                    });
+                    setCarrierDraft(null);
+                    setTrackingDraft(null);
+                  });
+                }}
+              >
+                <div className="grid gap-1.5">
+                  <Label htmlFor="newCarrier">Carrier</Label>
+                  <Input
+                    id="newCarrier"
+                    value={newCarrier}
+                    onChange={(e) => setCarrierDraft(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="newTracking">Tracking number</Label>
+                  <Input
+                    id="newTracking"
+                    value={newTracking}
+                    onChange={(e) => setTrackingDraft(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  className="self-end"
+                  disabled={busy || !trackingDirty || newTracking.trim() === ""}
+                >
+                  Update tracking
                 </Button>
               </form>
             </section>

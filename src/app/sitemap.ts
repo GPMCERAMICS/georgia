@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.8,
     },
+    { url: `${site.url}/care`, changeFrequency: "yearly", priority: 0.4 },
   ];
 
   // The sitemap must never 500 over a transient backend hiccup; the static

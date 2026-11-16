@@ -24,9 +24,25 @@ import { useCart } from "./cart-provider";
 import { useCartLines } from "./use-cart-lines";
 
 type Method = "ship" | "pickup";
-type ShipToForm = { name: string; line1: string; line2: string; city: string; state: string; postalCode: string };
+type ShipToForm = {
+  email: string;
+  name: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+};
 
-const EMPTY_SHIP_TO: ShipToForm = { name: "", line1: "", line2: "", city: "", state: "", postalCode: "" };
+const EMPTY_SHIP_TO: ShipToForm = {
+  email: "",
+  name: "",
+  line1: "",
+  line2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+};
 const SHIP_TO_KEY = "gpm-ship-to";
 
 /**
@@ -57,6 +73,8 @@ export function CartCheckout() {
     }
   });
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [newsletter, setNewsletter] = useState(false);
 
   // Stripe's back link lands here with the abandoned order; free its pieces
   // now rather than at the end of the hold. Read from `window` rather than
@@ -97,10 +115,16 @@ export function CartCheckout() {
     (key: keyof ShipToForm) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setAddressError(null);
+      setEmailError(null);
       setShipTo((current) => ({ ...current, [key]: event.target.value }));
     };
 
   async function handleCheckout() {
+    const email = shipTo.email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError("Enter the email address your receipt should go to.");
+      return;
+    }
     let destination: ShipTo | undefined;
     if (effectiveMethod === "ship") {
       const checked = checkShipTo({ ...shipTo, line2: shipTo.line2 || null });
@@ -109,11 +133,11 @@ export function CartCheckout() {
         return;
       }
       destination = checked.shipTo;
-      try {
-        window.sessionStorage.setItem(SHIP_TO_KEY, JSON.stringify(shipTo));
-      } catch {
-        // Remembering the address is a convenience only.
-      }
+    }
+    try {
+      window.sessionStorage.setItem(SHIP_TO_KEY, JSON.stringify(shipTo));
+    } catch {
+      // Remembering the details is a convenience only.
     }
     setStarting(true);
     try {
@@ -121,6 +145,8 @@ export function CartCheckout() {
         pieceIds: available.map((piece) => piece._id),
         shippingMethod: effectiveMethod,
         shipTo: destination,
+        email,
+        newsletterOptIn: newsletter,
       });
       window.location.assign(url);
     } catch (error) {
@@ -226,6 +252,40 @@ export function CartCheckout() {
             </label>
           )}
         </div>
+
+        <fieldset className="mt-6 grid gap-3">
+          <legend className="font-display text-lg">Your email</legend>
+          <div className="grid gap-1.5">
+            <Label htmlFor="ship-email" className="sr-only">
+              Email address
+            </Label>
+            <Input
+              id="ship-email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={shipTo.email}
+              onChange={field("email")}
+            />
+            <p className="text-xs text-muted-foreground">
+              For your receipt and updates about this order.
+            </p>
+          </div>
+          <label className="flex items-start gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 accent-primary"
+              checked={newsletter}
+              onChange={(event) => setNewsletter(event.target.checked)}
+            />
+            <span>Also email me now and then about new pieces and studio news.</span>
+          </label>
+          {emailError && (
+            <p role="alert" className="text-sm text-destructive">
+              {emailError}
+            </p>
+          )}
+        </fieldset>
 
         {effectiveMethod === "ship" && (
           <fieldset className="mt-6 grid gap-3">

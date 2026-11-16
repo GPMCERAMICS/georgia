@@ -97,9 +97,12 @@ export const handleWebhook = internalAction({
           typeof charge.payment_intent === "string"
             ? charge.payment_intent
             : (charge.payment_intent?.id ?? null);
-        if (paymentIntentId && charge.refunded) {
+        // Fires for partial refunds too; `amount_refunded` is the running total.
+        if (paymentIntentId && charge.amount_refunded > 0) {
           await ctx.runMutation(internal.orders.markRefunded, {
             stripePaymentIntentId: paymentIntentId,
+            amountRefundedCents: charge.amount_refunded,
+            full: charge.refunded,
           });
         }
         return { handled: event.type };

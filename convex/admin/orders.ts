@@ -75,8 +75,44 @@ export const markShipped = mutation({
       carrier: args.carrier.trim() || null,
       trackingNumber: args.trackingNumber.trim() || null,
     });
-    await ctx.scheduler.runAfter(0, internal.emails.orderShipped, { orderId: args.id });
+    await ctx.scheduler.runAfter(0, internal.emails.orderUpdate, {
+      orderId: args.id,
+      event: "shipped",
+    });
     return null;
+  },
+});
+
+/**
+ * Corrects the carrier or tracking number on an order already on its way,
+ * and tells the customer — but only when something actually changed.
+ */
+export const updateTracking = mutation({
+  args: {
+    id: v.id("orders"),
+    carrier: v.string(),
+    trackingNumber: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const order = await ctx.db.get("orders", args.id);
+    if (!order) throw new Error("Order not found");
+    if (order.status !== "shipped" || order.shippingMethod !== "ship") {
+      throw new Error("Tracking can only be changed on a shipped order");
+    }
+    const carrier = args.carrier.trim() || null;
+    const trackingNumber = args.trackingNumber.trim() || null;
+    if (carrier === order.carrier && trackingNumber === order.trackingNumber) {
+      return { changed: false };
+    }
+    await ctx.db.patch("orders", args.id, { carrier, trackingNumber });
+    if (trackingNumber) {
+      await ctx.scheduler.runAfter(0, internal.emails.orderUpdate, {
+        orderId: args.id,
+        event: "trackingUpdated",
+      });
+    }
+    return { changed: true };
   },
 });
 
@@ -88,6 +124,10 @@ export const markDelivered = mutation({
     if (!order) throw new Error("Order not found");
     if (order.status !== "shipped") throw new Error("Only a shipped order can be delivered");
     await setOrderStatus(ctx, args.id, "delivered", { deliveredAt: Date.now() });
+    await ctx.scheduler.runAfter(0, internal.emails.orderUpdate, {
+      orderId: args.id,
+      event: "delivered",
+    });
     return null;
   },
 });

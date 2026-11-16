@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { site } from "@/lib/site";
+import { NewsletterSignup } from "./newsletter-signup";
 
 const SITE_MAP = [
   { href: "/shop", label: "Shop" },
   { href: "/commissions", label: "Commissions" },
   { href: "/contact", label: "About" },
+  { href: "/care", label: "Care guide" },
   { href: "/faq", label: "FAQ" },
 ];
 
@@ -20,7 +22,9 @@ export function SiteFooter() {
   ].filter((item) => item.href);
 
   return (
-    <footer className="mt-auto bg-secondary">
+    <div className="mt-auto">
+      <NewsletterSignup />
+    <footer className="bg-secondary">
       <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-16 md:grid-cols-[1.2fr_2fr] md:px-10">
         <div>
           <p className="font-display text-4xl leading-none">{site.name}</p>
@@ -86,5 +90,6 @@ export function SiteFooter() {
         <span className="font-[system-ui]">&copy;</span> {year} {domain}. Each piece made by hand.
       </div>
     </footer>
+    </div>
   );
 }

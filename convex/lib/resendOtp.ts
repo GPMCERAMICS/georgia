@@ -1,4 +1,5 @@
 import Resend from "@auth/core/providers/resend";
+import { resetCode } from "./emailTemplates";
 
 /**
  * Emails an 8-digit code for the password reset flow.
@@ -21,6 +22,10 @@ export const ResendOTPPasswordReset = Resend({
     }
     const from =
       process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <info@sales.gpmceramics.com>";
+    const message = resetCode({
+      siteUrl: (process.env.SITE_URL ?? "https://www.gpmceramics.com").replace(/\/$/, ""),
+      code: token,
+    });
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -30,12 +35,9 @@ export const ResendOTPPasswordReset = Resend({
       body: JSON.stringify({
         from,
         to: [email],
-        subject: "Your dashboard reset code",
-        text: [
-          `Your password reset code is ${token}`,
-          "",
-          "It expires shortly. If you did not ask for this, you can ignore it.",
-        ].join("\n"),
+        subject: message.subject,
+        text: message.text,
+        html: message.html,
       }),
     });
     if (!response.ok) {

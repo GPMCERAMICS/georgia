@@ -1,8 +1,10 @@
 import { v } from "convex/values";
 import { internalAction, internalQuery } from "./_generated/server";
 import { internal } from "./_generated/api";
-import type { Doc } from "./_generated/dataModel";
 import { adminEmails } from "./lib/adminEmails";
+import * as templates from "./lib/emailTemplates";
+import type { Email, InquiryData, OrderData } from "./lib/emailTemplates";
+import { itemsForOrder } from "./orders";
 import { getSettings } from "./settings";
 
 /**
@@ -12,10 +14,10 @@ import { getSettings } from "./settings";
  * Every send is scheduled from a mutation (`ctx.scheduler.runAfter(0, …)`),
  * which means the order is committed before the email is attempted and a
  * failed send never rolls back a sale.
+ *
+ * The wording and design live in `lib/emailTemplates.ts`; this file only
+ * gathers the data and decides who gets what.
  */
-
-const money = (cents: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 
 /**
  * Where replies go when a message names nobody in particular. The sending
@@ -30,10 +32,17 @@ export function fromAddress(): string {
   return process.env.RESEND_FROM_EMAIL ?? "GPM Ceramics <info@sales.gpmceramics.com>";
 }
 
+/** The public site, for links and images inside emails. */
+export function siteUrl(): string {
+  return (process.env.SITE_URL ?? "https://www.gpmceramics.com").replace(/\/$/, "");
+}
+
 export async function send(message: {
   to: string[];
   subject: string;
   text: string;
+  html?: string;
+  bcc?: string[];
   replyTo?: string;
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -41,6 +50,8 @@ export async function send(message: {
     console.error("RESEND_API_KEY is not set; skipping email:", message.subject);
     return;
   }
+  const to = message.to.map((address) => address.toLowerCase());
+  const bcc = (message.bcc ?? []).filter((address) => !to.includes(address.toLowerCase()));
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -50,8 +61,10 @@ export async function send(message: {
     body: JSON.stringify({
       from: fromAddress(),
       to: message.to,
+      bcc: bcc.length > 0 ? bcc : undefined,
       subject: message.subject,
       text: message.text,
+      html: message.html,
       reply_to: message.replyTo ?? replyToAddress(),
     }),
   });
@@ -59,6 +72,21 @@ export async function send(message: {
     const body = await response.text();
     throw new Error(`Resend ${response.status}: ${body}`);
   }
+}
+
+/** Sends a rendered template. `copyOwners` blind-copies the shop owner. */
+async function deliver(
+  email: Email,
+  options: { to: string[]; copyOwners?: string[]; replyTo?: string },
+): Promise<void> {
+  await send({
+    to: options.to,
+    bcc: options.copyOwners,
+    replyTo: options.replyTo,
+    subject: email.subject,
+    text: email.text,
+    html: email.html,
+  });
 }
 
 /** Where owner notifications go: Settings first, then the admin allowlist. */
@@ -75,144 +103,215 @@ export const ownerRecipients = internalQuery({
   },
 });
 
-function orderLines(items: Doc<"orderItems">[]): string {
-  return items.map((item) => `  • ${item.titleSnapshot} — ${money(item.priceCents)}`).join("\n");
-}
+/**
+ * Everything an order email needs, in the template's shape: lines with their
+ * photo and lead-time note, totals, address, pickup details, and who the
+ * owner copies go to.
+ */
+export const orderContext = internalQuery({
+  args: { orderId: v.id("orders") },
+  handler: async (
+    ctx,
+    args,
+  ): Promise<{ order: Omit<OrderData, "siteUrl">; owners: string[] } | null> => {
+    const order = await ctx.db.get("orders", args.orderId);
+    if (!order) return null;
+    const settings = await getSettings(ctx);
+    const lines = await itemsForOrder(ctx, order._id);
 
-function addressBlock(order: Doc<"orders">): string {
-  if (order.shippingMethod === "pickup") return "Local pickup";
-  const a = order.shippingAddress;
-  if (!a) return "Shipping address pending";
-  return [a.line1, a.line2, `${a.city}, ${a.state} ${a.postalCode}`, a.country]
-    .filter(Boolean)
-    .join("\n");
-}
+    const items = await Promise.all(
+      lines.map(async (line) => {
+        const piece = await ctx.db.get("pieces", line.pieceId);
+        const imageUrl = piece?.images[0] ? await ctx.storage.getUrl(piece.images[0]) : null;
+        const note =
+          piece?.mode === "madeToOrder"
+            ? piece.leadTimeWeeks
+              ? `Made to order — ships in about ${piece.leadTimeWeeks} week${piece.leadTimeWeeks === 1 ? "" : "s"}`
+              : "Made to order"
+            : null;
+        return { title: line.titleSnapshot, priceCents: line.priceCents, imageUrl, note };
+      }),
+    );
 
+    const address = order.shippingAddress;
+    let owners: string[] = [];
+    if (settings.notifyEmail.trim() !== "") owners = [settings.notifyEmail.trim()];
+    else {
+      try {
+        owners = adminEmails();
+      } catch {
+        owners = [];
+      }
+    }
+
+    return {
+      owners,
+      order: {
+        orderNumber: order.orderNumber,
+        name: order.name,
+        email: order.email,
+        items,
+        subtotalCents: order.subtotalCents,
+        discountCents: order.discountCents ?? 0,
+        shippingCents: order.shippingCents,
+        taxCents: order.taxCents,
+        totalCents: order.totalCents,
+        shippingMethod: order.shippingMethod,
+        addressLines:
+          order.shippingMethod === "pickup" || !address
+            ? null
+            : [
+                order.name ?? "",
+                address.line1,
+                address.line2 ?? "",
+                `${address.city}, ${address.state} ${address.postalCode}`,
+              ].filter(Boolean),
+        pickupLabel: settings.pickup.label,
+        pickupInstructions: settings.pickup.instructions,
+        carrier: order.carrier,
+        trackingNumber: order.trackingNumber,
+      },
+    };
+  },
+});
+
+/** Payment landed: confirmation to the buyer, a separate notice to the owner. */
 export const orderPaid = internalAction({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
-    const result = await ctx.runQuery(internal.orders.getWithItems, { orderId: args.orderId });
-    if (!result) return null;
-    const { order, items } = result;
-    const owners: string[] = await ctx.runQuery(internal.emails.ownerRecipients, {});
-
-    const summary = [
-      orderLines(items),
-      "",
-      `Subtotal: ${money(order.subtotalCents)}`,
-      (order.discountCents ?? 0) > 0 ? `Discount: -${money(order.discountCents ?? 0)}` : null,
-      `Shipping: ${order.shippingCents === 0 ? (order.shippingMethod === "pickup" ? "Local pickup" : "Free") : money(order.shippingCents)}`,
-      order.taxCents > 0 ? `Tax: ${money(order.taxCents)}` : null,
-      `Total: ${money(order.totalCents)}`,
-    ]
-      .filter((line) => line !== null)
-      .join("\n");
+    const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
+    if (!context) return null;
+    const order: OrderData = { ...context.order, siteUrl: siteUrl() };
 
     if (order.email) {
-      await send({
-        to: [order.email],
-        subject: `Order ${order.orderNumber} — thank you!`,
-        text: [
-          `Hi ${order.name ?? "there"},`,
-          "",
-          "Thank you for your order from GPM Ceramics. Each piece is",
-          "handmade, so Georgia will pack it with care and let you know when it ships.",
-          "",
-          `Order ${order.orderNumber}`,
-          summary,
-          "",
-          order.shippingMethod === "pickup"
-            ? "You chose local pickup. Georgia will email you to arrange a time."
-            : `Shipping to:\n${addressBlock(order)}`,
-          "",
-          "Questions? Just reply to this email.",
-          "",
-          "— Georgia",
-        ].join("\n"),
-      });
+      await deliver(templates.orderConfirmation(order), { to: [order.email] });
     }
-
-    if (owners.length > 0) {
-      await send({
-        to: owners,
-        subject: `New order ${order.orderNumber} — ${money(order.totalCents)}`,
+    if (context.owners.length > 0) {
+      await deliver(templates.newOrderForOwner(order), {
+        to: context.owners,
         replyTo: order.email ?? undefined,
-        text: [
-          `${order.name ?? "A customer"} <${order.email ?? "no email"}> just paid.`,
-          "",
-          summary,
-          "",
-          addressBlock(order),
-          "",
-          "Open the dashboard to mark it shipped once it is on its way.",
-        ].join("\n"),
       });
     }
     return null;
   },
 });
 
-export const orderShipped = internalAction({
-  args: { orderId: v.id("orders") },
+const orderEvent = v.union(
+  v.literal("shipped"),
+  v.literal("trackingUpdated"),
+  v.literal("delivered"),
+);
+
+/**
+ * The fulfilment emails. A pickup order "ships" by becoming ready to collect
+ * and is "delivered" when collected, so the wording follows the order.
+ */
+export const orderUpdate = internalAction({
+  args: { orderId: v.id("orders"), event: orderEvent },
   handler: async (ctx, args) => {
-    const result = await ctx.runQuery(internal.orders.getWithItems, { orderId: args.orderId });
-    if (!result) return null;
-    const { order, items } = result;
-    const email = order.email;
-    if (!email) return null;
-    const tracking =
-      order.trackingNumber && order.carrier
-        ? `${order.carrier} tracking: ${order.trackingNumber}`
-        : order.trackingNumber
-          ? `Tracking: ${order.trackingNumber}`
-          : null;
-    await send({
-      to: [email],
-      subject: `Order ${order.orderNumber} is on its way`,
-      text: [
-        `Hi ${order.name ?? "there"},`,
-        "",
-        "Your pottery has shipped.",
-        "",
-        orderLines(items),
-        "",
-        tracking,
-        "",
-        "Handmade ceramics are sturdy but not indestructible — please unpack",
-        "carefully and let Georgia know if anything arrived less than perfect.",
-        "",
-        "— Georgia",
-      ]
-        .filter((line) => line !== null)
-        .join("\n"),
-    });
+    const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
+    if (!context || !context.order.email) return null;
+    const order: OrderData = { ...context.order, siteUrl: siteUrl() };
+    const pickup = order.shippingMethod === "pickup";
+
+    let email: Email;
+    if (args.event === "delivered") email = templates.orderDelivered(order);
+    else if (pickup) email = templates.pickupReady(order);
+    else if (args.event === "trackingUpdated") email = templates.shippingUpdate(order);
+    else email = templates.orderShipped(order);
+
+    await deliver(email, { to: [context.order.email], copyOwners: context.owners });
     return null;
   },
 });
 
+export const orderRefunded = internalAction({
+  args: { orderId: v.id("orders"), amountCents: v.number(), full: v.boolean() },
+  handler: async (ctx, args) => {
+    const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
+    if (!context || !context.order.email) return null;
+    const order: OrderData = { ...context.order, siteUrl: siteUrl() };
+    await deliver(
+      templates.orderRefunded(order, { amountCents: args.amountCents, full: args.full }),
+      { to: [context.order.email], copyOwners: context.owners },
+    );
+    return null;
+  },
+});
+
+/** How long after the first reminder the second (and last) one goes out. */
+const SECOND_REMINDER_DELAY_MS = 24 * 60 * 60_000;
+
+/**
+ * An abandoned-checkout reminder. Whether it may be sent at all is decided,
+ * and recorded, by `orders.claimCartReminder` in one transaction — so two
+ * runs can never both send, and the caps hold.
+ */
+export const cartReminder = internalAction({
+  args: { orderId: v.id("orders"), attempt: v.union(v.literal(1), v.literal(2)) },
+  handler: async (ctx, args) => {
+    const claim = await ctx.runMutation(internal.orders.claimCartReminder, args);
+    if (!claim) return null;
+    const base = siteUrl();
+    await deliver(
+      templates.cartReminder({
+        siteUrl: base,
+        name: claim.name,
+        items: claim.items,
+        attempt: args.attempt,
+        unsubscribeUrl: `${base}/unsubscribe?t=${claim.token}&k=reminders`,
+      }),
+      { to: [claim.email], copyOwners: claim.owners },
+    );
+    if (args.attempt === 1) {
+      await ctx.scheduler.runAfter(SECOND_REMINDER_DELAY_MS, internal.emails.cartReminder, {
+        orderId: args.orderId,
+        attempt: 2,
+      });
+    }
+    return null;
+  },
+});
+
+/** The commission form: an acknowledgement to the sender, the request to the owner. */
 export const inquiryReceived = internalAction({
   args: { inquiryId: v.id("inquiries") },
   handler: async (ctx, args) => {
-    const inquiry = await ctx.runQuery(internal.inquiries.getInternal, { id: args.inquiryId });
-    if (!inquiry) return null;
+    const found = await ctx.runQuery(internal.inquiries.getInternal, { id: args.inquiryId });
+    if (!found) return null;
+    const inquiry: InquiryData = {
+      siteUrl: siteUrl(),
+      name: found.inquiry.name,
+      email: found.inquiry.email,
+      type: found.inquiry.type,
+      budget: found.inquiry.budget,
+      message: found.inquiry.message,
+      pieceTitle: found.pieceTitle,
+    };
     const owners: string[] = await ctx.runQuery(internal.emails.ownerRecipients, {});
-    if (owners.length === 0) return null;
-    await send({
-      to: owners,
-      replyTo: inquiry.email,
-      subject: `New commission inquiry — ${inquiry.name}`,
-      text: [
-        `Name: ${inquiry.name}`,
-        `Email: ${inquiry.email}`,
-        `Type: ${inquiry.type || "Not specified"}`,
-        `Budget: ${inquiry.budget || "Not specified"}`,
-        "",
-        "Message:",
-        inquiry.message,
-        "",
-        "This inquiry is also waiting in the dashboard under Inquiries.",
-      ].join("\n"),
-    });
+
+    if (owners.length > 0) {
+      await deliver(templates.commissionForOwner(inquiry), {
+        to: owners,
+        replyTo: inquiry.email,
+      });
+    }
+    await deliver(templates.commissionReceived(inquiry), { to: [inquiry.email] });
+    return null;
+  },
+});
+
+export const newsletterWelcome = internalAction({
+  args: { email: v.string(), token: v.string() },
+  handler: async (_ctx, args) => {
+    const base = siteUrl();
+    await deliver(
+      templates.newsletterWelcome({
+        siteUrl: base,
+        unsubscribeUrl: `${base}/unsubscribe?t=${args.token}&k=newsletter`,
+      }),
+      { to: [args.email] },
+    );
     return null;
   },
 });

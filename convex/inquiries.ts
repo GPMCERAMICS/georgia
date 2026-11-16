@@ -40,7 +40,13 @@ export const submit = mutation({
   },
 });
 
+/** The inquiry plus the title of the piece it was sent from, if any. */
 export const getInternal = internalQuery({
   args: { id: v.id("inquiries") },
-  handler: async (ctx, args) => ctx.db.get("inquiries", args.id),
+  handler: async (ctx, args) => {
+    const inquiry = await ctx.db.get("inquiries", args.id);
+    if (!inquiry) return null;
+    const piece = inquiry.pieceId ? await ctx.db.get("pieces", inquiry.pieceId) : null;
+    return { inquiry, pieceTitle: piece?.title ?? null };
+  },
 });

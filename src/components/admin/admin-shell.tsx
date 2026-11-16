@@ -10,6 +10,7 @@ import {
   Inbox,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   Package,
   Settings,
@@ -29,6 +30,7 @@ const NAV = [
   { href: "/admin/tags", label: "Tags", icon: Tags },
   { href: "/admin/inquiries", label: "Inquiries", icon: Inbox },
   { href: "/admin/customers", label: "Customers", icon: Users },
+  { href: "/admin/subscribers", label: "Newsletter", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

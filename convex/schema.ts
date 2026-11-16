@@ -171,6 +171,13 @@ export default defineSchema({
     carrier: v.union(v.string(), v.null()),
     trackingNumber: v.union(v.string(), v.null()),
     notes: v.string(),
+    // Running total refunded through Stripe; absent until a refund happens.
+    refundedCents: v.optional(v.number()),
+    // The shopper ticked "send me news" in the cart. Acted on once paid.
+    newsletterOptIn: v.optional(v.boolean()),
+    // Set when an abandoned-checkout reminder has been queued for this order,
+    // so the several paths that expire a hold only ever queue one.
+    reminderQueued: v.optional(v.boolean()),
   })
     .index("by_status", ["status"])
     .index("by_email", ["email"])
@@ -198,6 +205,37 @@ export default defineSchema({
     .index("by_pieceId", ["pieceId"]),
 
   settings: defineTable(settingsFields),
+
+  /**
+   * One row per email address we may write to beyond a single order: the
+   * newsletter list and the "stop reminding me" switch. `token` is what
+   * unsubscribe links carry, so nobody has to sign in to opt out.
+   */
+  contacts: defineTable({
+    email: v.string(),
+    token: v.string(),
+    newsletter: v.boolean(),
+    // Where they joined the list: "footer", "checkout".
+    source: v.union(v.string(), v.null()),
+    subscribedAt: v.union(v.number(), v.null()),
+    // True once they have asked for no more abandoned-checkout reminders.
+    remindersOff: v.boolean(),
+    // The welcome email is sent once per address, ever.
+    welcomedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_email", ["email"])
+    .index("by_token", ["token"])
+    .index("by_newsletter", ["newsletter"]),
+
+  /** Every abandoned-checkout reminder sent, for the per-person cap. */
+  cartReminders: defineTable({
+    email: v.string(),
+    orderId: v.id("orders"),
+    attempt: v.number(),
+    sentAt: v.number(),
+  })
+    .index("by_email_and_sentAt", ["email", "sentAt"])
+    .index("by_orderId", ["orderId"]),
 
   inquiries: defineTable({
     name: v.string(),

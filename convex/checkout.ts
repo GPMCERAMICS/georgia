@@ -39,12 +39,18 @@ export const start = action({
     // The address from the cart. Required when shipping; reserve refuses
     // anything outside the continental US before a hold or a charge exists.
     shipTo: v.optional(shipTo),
+    // Where order updates go. Asked for in the cart, so it is known even if
+    // the shopper never finishes paying.
+    email: v.string(),
+    newsletterOptIn: v.optional(v.boolean()),
   },
   handler: async (ctx, args): Promise<{ url: string }> => {
     const reserved = await ctx.runMutation(internal.orders.reserve, {
       pieceIds: args.pieceIds,
       shippingMethod: args.shippingMethod,
       shipTo: args.shipTo,
+      email: args.email,
+      newsletterOptIn: args.newsletterOptIn,
     });
 
     try {
@@ -94,6 +100,9 @@ export const start = action({
             },
           },
         ],
+        // Prefilled and locked on Stripe's page, so the receipt, the order
+        // and any follow-up all use the address given in the cart.
+        customer_email: reserved.email ?? undefined,
         automatic_tax: { enabled: reserved.taxEnabled },
         // Codes are created and managed in the Stripe dashboard; this shows
         // the "Add promotion code" field on the Stripe checkout page.
