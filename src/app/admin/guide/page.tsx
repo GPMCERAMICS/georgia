@@ -186,7 +186,7 @@ const sections: Section[] = [
       },
       {
         kind: "note",
-        text: <>To see them all, go to {go("/admin/settings", "Settings")} and use {b("Sample of every email")} to send yourself one of each. {b("Test email")} on the same page checks that sending works at all.</>,
+        text: <>To see them all, go to {go("/admin/settings", "Settings")} and use {b("Sample of every email")} to send yourself one of each.</>,
       },
     ],
   },
@@ -276,7 +276,7 @@ const sections: Section[] = [
         kind: "points",
         items: [
           <>{b("A paid order is not showing")}: wait a minute and refresh. If it still is not there, check the payment in Stripe and get in touch with whoever looks after the site.</>,
-          <>{b("An email did not arrive")}: check spam, then send yourself a test from {go("/admin/settings", "Settings")}. The test shows the reason if sending is failing.</>,
+          <>{b("An email did not arrive")}: check spam, then send yourself the samples from {go("/admin/settings", "Settings")}. It shows the reason if sending is failing.</>,
           <>{b("A piece will not delete")}: it has been bought. Archive it instead.</>,
           <>{b("A photo will not upload")}: use a JPG, PNG or WebP file.</>,
           <>{b("Forgot your password")}: use the reset link on the sign-in page. A code is emailed to you.</>,

@@ -318,12 +318,12 @@ describe("admin.pieces.remove", () => {
   });
 });
 
-describe("admin.emailTest.sendTest", () => {
+describe("admin.emailTest.sendSamples", () => {
   test("is refused for anyone who is not an admin", async () => {
     process.env.ADMIN_EMAIL = ADMIN.email;
     const t = convexTest(schema, modules);
     await expect(
-      t.action(api.admin.emailTest.sendTest, { to: ["someone@example.com"] }),
+      t.action(api.admin.emailTest.sendSamples, { to: "someone@example.com" }),
     ).rejects.toThrow("Not authorised");
   });
 
@@ -333,7 +333,7 @@ describe("admin.emailTest.sendTest", () => {
     const t = convexTest(schema, modules);
     const admin = await asAdmin(t);
     await expect(
-      admin.action(api.admin.emailTest.sendTest, { to: ["someone@example.com"] }),
+      admin.action(api.admin.emailTest.sendSamples, { to: "someone@example.com" }),
     ).rejects.toThrow("RESEND_API_KEY");
   });
 });
