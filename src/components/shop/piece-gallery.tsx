@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 /**
  * On the two-column layout the square photo is capped so that it, the
  * breadcrumb above it and the thumbnail row below it fit in the window
- * together: the 10.75rem is those two rows plus the block's padding.
+ * together: the 16.75rem is those two rows, the block's padding and the
+ * pinned site header above it.
  */
-export const PIECE_PHOTO_FIT = "md:max-w-[calc(100svh-10.75rem)]";
+export const PIECE_PHOTO_FIT = "md:max-w-[calc(100svh-16.75rem)]";
 
 /** One large photo with a row of thumbnails that swap it. */
 export function PieceGallery({ images, title }: { images: string[]; title: string }) {

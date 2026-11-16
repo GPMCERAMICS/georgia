@@ -112,7 +112,7 @@ export default async function PiecePage({ params }: Params) {
             window's height (see PIECE_PHOTO_FIT) so the whole block, thumbnails
             included, is always on screen while pinned.
           */}
-          <div className="md:sticky md:top-0 md:py-4">
+          <div className="md:sticky md:top-24 md:py-4">
             <nav aria-label="Breadcrumb" className="mb-3 truncate text-lg">
               <Link href="/shop" className="hover:underline hover:underline-offset-4">
                 Shop

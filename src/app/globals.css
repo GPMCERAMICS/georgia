@@ -176,8 +176,8 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
-    /* offset anchored scroll so sticky nav/section headers aren't clipped */
-    scroll-padding-top: 2rem;
+    /* keep anchored targets clear of the pinned site header */
+    scroll-padding-top: 7rem;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display), system-ui, sans-serif;

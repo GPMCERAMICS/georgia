@@ -27,8 +27,8 @@ export default async function Home() {
         <Hero />
         <Intro />
         <HomeCatalog preloaded={preloaded} tags={tags} />
-        <About />
         <Commission />
+        <About />
       </main>
       <SiteFooter />
     </>

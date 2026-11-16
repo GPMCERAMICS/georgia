@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { CartButton } from "@/components/shop/cart-button";
 import { site } from "@/lib/site";
@@ -12,22 +15,42 @@ const NAV = [
 ];
 
 /**
- * Logo left; links and the cart together on the right.
+ * Logo left; links and the cart together on the right. Always pinned to the
+ * top of the window.
  *
- * `overlay` is for pages that open with a photo banner: the header sits on
- * top of the image in white instead of taking its own white strip.
+ * `overlay` is for pages that open with a full-width photo: the header
+ * starts transparent with white text on top of the image, then turns white
+ * with dark text once the page is scrolled. Everywhere else it is white
+ * with dark text from the start.
  */
 export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 8);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
+  const transparent = overlay && !scrolled;
+
   return (
     <header
       className={cn(
-        "relative z-40 w-full",
-        overlay ? "text-white" : "bg-background text-foreground",
+        "top-0 z-40 w-full border-b transition-colors duration-300",
+        // Over a photo the header floats on the image; otherwise it keeps
+        // its own strip of the page.
+        overlay ? "fixed inset-x-0" : "sticky",
+        transparent
+          ? "border-transparent bg-transparent text-white"
+          : "bg-background text-foreground",
+        !transparent && (scrolled ? "border-border" : "border-transparent"),
       )}
     >
       <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between gap-6 px-6 md:h-24 md:px-10">
         <Link href="/" className="flex items-center gap-2.5" aria-label={`${site.name}, home`}>
-          <Logo className={cn("h-8 w-auto md:h-9", !overlay && "text-primary")} />
+          <Logo className={cn("h-8 w-auto transition-colors duration-300 md:h-9", !transparent && "text-primary")} />
           <span className="font-display text-xl leading-none md:text-2xl">
             {site.name}
           </span>
@@ -48,7 +71,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
 
           <CartButton />
 
-          {/* Mobile: a native disclosure, so the menu needs no client code. */}
+          {/* Mobile: a native disclosure does the opening and closing. */}
           <details className="group relative md:hidden">
             <summary
               className="flex size-10 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden"
