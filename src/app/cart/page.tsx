@@ -12,7 +12,7 @@ export default function CartPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 pb-24 pt-10">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-24 pt-10 md:px-10">
         <h1 className="text-center font-display text-4xl leading-tight md:text-5xl">Your Cart</h1>
         <div className="mt-10">
           <CartCheckout />

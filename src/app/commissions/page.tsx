@@ -26,7 +26,7 @@ export default async function CommissionsPage(props: {
       <PageBanner image="/banner-commissions.webp">
         <BannerStatement>{commission.heading}</BannerStatement>
       </PageBanner>
-      <main className="mx-auto grid w-full max-w-6xl flex-1 gap-12 px-6 py-20 md:grid-cols-[0.85fr_1.15fr] md:py-24">
+      <main className="mx-auto grid w-full max-w-[1400px] flex-1 gap-12 px-6 py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-24">
         <div className="md:pt-2">
           <h1 className="font-display text-4xl leading-tight md:text-5xl">Commissions</h1>
           <p className="mt-5 text-lg leading-relaxed">

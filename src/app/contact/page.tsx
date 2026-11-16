@@ -25,14 +25,14 @@ export default function ContactPage() {
       </PageBanner>
 
       <main className="flex-1">
-        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:gap-20 md:py-28">
+        <section className="mx-auto grid max-w-[1400px] items-center gap-12 px-6 py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-28">
           <Image
             src="/gpm.webp"
             alt="Georgia Perkins-Miller, the maker behind GPM Ceramics"
             width={756}
             height={1008}
             sizes="(min-width: 768px) 28rem, 100vw"
-            className="mx-auto aspect-[3/4] w-full max-w-md object-cover"
+            className="aspect-[3/4] w-full max-w-lg object-cover"
           />
           <div>
             <h1 className="text-balance font-display text-4xl leading-tight md:text-5xl">
@@ -47,7 +47,7 @@ export default function ContactPage() {
         </section>
 
         <section className="bg-secondary">
-          <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 text-center md:grid-cols-2 md:py-24">
+          <div className="mx-auto grid max-w-[1400px] gap-12 px-6 py-20 text-center md:grid-cols-2 md:gap-16 md:px-10 md:py-24">
             <div>
               <h2 className="font-display text-3xl md:text-4xl">Get in touch</h2>
               <p className="mx-auto mt-5 max-w-sm text-lg leading-relaxed">

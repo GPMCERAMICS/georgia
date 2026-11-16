@@ -10,7 +10,7 @@ const SITE_MAP = [
   { href: "/faq", label: "FAQ" },
 ];
 
-const linkClass = "underline underline-offset-4 hover:no-underline";
+const linkClass = "underline-offset-4 hover:underline";
 
 export function SiteFooter() {
   const year = 2026; // static to keep the page fully server-cacheable

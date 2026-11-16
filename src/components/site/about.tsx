@@ -6,9 +6,9 @@ import { site } from "@/lib/site";
 export function About() {
   return (
     <section id="about" className="bg-secondary">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-28">
+      <div className="mx-auto grid max-w-[1400px] items-center gap-12 px-6 py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-28">
         <div className="order-2 md:order-1">
-          <div className="mx-auto max-w-md overflow-hidden">
+          <div className="max-w-lg overflow-hidden">
             <Image
               src="/gpm.webp"
               alt="Georgia Perkins-Miller, the maker behind GPM Ceramics"
