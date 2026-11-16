@@ -42,7 +42,7 @@ export default async function CommissionsPage(props: {
           </ul>
           <p className="mt-8">
             Prefer email?{" "}
-            <a href={`mailto:${site.email}`} className="text-primary underline underline-offset-4">
+            <a href={`mailto:${site.email}`} className="text-primary underline-offset-4 hover:underline">
               {site.email}
             </a>
           </p>

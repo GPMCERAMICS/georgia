@@ -168,7 +168,7 @@ export default async function PiecePage({ params }: Params) {
                     {i > 0 && ", "}
                     <Link
                       href={`/shop?tag=${tag.slug}`}
-                      className="text-foreground underline underline-offset-4 hover:no-underline"
+                      className="text-foreground underline-offset-4 hover:underline"
                     >
                       {tag.name}
                     </Link>
@@ -187,7 +187,7 @@ export default async function PiecePage({ params }: Params) {
               </h2>
               <Link
                 href={collection ? `/shop?tag=${collection.slug}` : "/shop"}
-                className="shrink-0 border-b border-current pb-0.5 text-lg"
+                className="shrink-0 py-1 text-lg underline-offset-4 hover:underline"
               >
                 Shop all
               </Link>

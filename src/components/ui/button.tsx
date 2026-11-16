@@ -21,7 +21,8 @@ const buttonVariants = cva(
           "bg-destructive text-white shadow-sm hover:bg-destructive/90",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        // The same height as a text input, so a field and its button line up.
+        default: "h-12 px-5 py-2",
         sm: "h-9 px-3.5",
         lg: "h-12 px-6 text-base",
         icon: "size-10",

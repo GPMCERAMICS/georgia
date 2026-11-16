@@ -45,7 +45,7 @@ export function PiecePurchasePanel({
 
   return (
     <div className="mt-5 flex w-full flex-col items-start">
-      <p className="text-2xl">{formatPrice(piece.priceCents)}</p>
+      <p className="text-3xl">{formatPrice(piece.priceCents)}</p>
       {line && !held && <p className="mt-1 text-muted-foreground">{line}</p>}
 
       {children}

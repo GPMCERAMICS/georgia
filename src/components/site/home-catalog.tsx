@@ -72,7 +72,7 @@ export function HomeCatalog({
                     sizes="(min-width: 640px) 50vw, 100vw"
                     className="aspect-[5/4]"
                   />
-                  <span className="mt-7 inline-block border-b border-current pb-1 font-display text-3xl leading-none md:text-4xl">
+                  <span className="mt-6 inline-block font-display text-3xl leading-none underline-offset-8 group-hover:underline md:text-4xl">
                     {tag.name}
                   </span>
                 </Link>
@@ -86,7 +86,7 @@ export function HomeCatalog({
         <section className="mx-auto w-full max-w-[1400px] px-6 pb-20 md:px-10 md:pb-28">
           <div className="flex items-baseline justify-between gap-6">
             <h2 className="font-display text-3xl md:text-4xl">Best Sellers</h2>
-            <Link href="/shop" className="border-b border-current pb-0.5 text-lg">
+            <Link href="/shop" className="py-1 text-lg underline-offset-4 hover:underline">
               Shop all
             </Link>
           </div>
@@ -123,7 +123,7 @@ function BestSellerCard({ piece }: { piece: PublicPiece }) {
       <h3 className="mt-6 line-clamp-2 font-display text-2xl leading-snug">
         <Link href={`/shop/${piece.slug}`}>{piece.title}</Link>
       </h3>
-      <p className="mt-2">{formatPrice(piece.priceCents)}</p>
+      <p className="mt-2 text-lg">{formatPrice(piece.priceCents)}</p>
       <p className="mt-4 line-clamp-2 leading-relaxed">{piece.description}</p>
       <div className="mt-7">
         {status ? (

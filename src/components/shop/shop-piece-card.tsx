@@ -70,7 +70,7 @@ export function ShopPieceCard({
           </h3>
           {status && <span className="shrink-0 text-sm text-clay">{status}</span>}
         </div>
-        <p className={cn("mt-1.5", status === "Sold" && "text-muted-foreground line-through")}>
+        <p className={cn("mt-1.5 text-lg", status === "Sold" && "text-muted-foreground line-through")}>
           {formatPrice(piece.priceCents)}
         </p>
       </article>

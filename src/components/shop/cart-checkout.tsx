@@ -179,7 +179,7 @@ export function CartCheckout() {
                   <Link href={`/shop/${piece.slug}`} className="font-display text-xl leading-snug hover:underline">
                     {piece.title}
                   </Link>
-                  <span className={cn("font-display text-lg", sold && "text-muted-foreground line-through")}>
+                  <span className={cn("font-display text-xl", sold && "text-muted-foreground line-through")}>
                     {formatPrice(piece.priceCents)}
                   </span>
                 </div>
@@ -196,7 +196,7 @@ export function CartCheckout() {
                 <button
                   type="button"
                   onClick={() => remove(piece._id)}
-                  className="mt-auto w-fit py-2 text-sm text-muted-foreground underline"
+                  className="mt-auto w-fit py-2 text-sm text-muted-foreground underline-offset-4 hover:underline"
                 >
                   Remove
                 </button>
@@ -364,7 +364,7 @@ export function CartCheckout() {
         <button
           type="button"
           onClick={clear}
-          className="mt-2 w-full py-2.5 text-center text-sm text-muted-foreground underline"
+          className="mt-2 w-full py-2.5 text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
           Empty cart
         </button>

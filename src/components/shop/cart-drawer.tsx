@@ -84,7 +84,7 @@ export function CartDrawer() {
                       <Link href={`/shop/${piece.slug}`} onClick={close} className="font-display text-lg leading-snug hover:underline">
                         {piece.title}
                       </Link>
-                      <span className={cn("text-sm", sold ? "text-destructive" : "text-muted-foreground")}>
+                      <span className={cn(sold ? "text-sm" : "text-base", sold ? "text-destructive" : "text-muted-foreground")}>
                         {held
                           ? "On hold in another checkout"
                           : sold
@@ -94,7 +94,7 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => remove(piece._id)}
-                        className="mt-auto w-fit py-1.5 text-sm text-muted-foreground underline"
+                        className="mt-auto w-fit py-1.5 text-sm text-muted-foreground underline-offset-4 hover:underline"
                       >
                         Remove
                       </button>
