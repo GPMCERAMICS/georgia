@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchQuery, preloadQuery, preloadedQueryResult } from "convex/nextjs";
 import { api } from "@convex/_generated/api";
-import { PieceGallery } from "@/components/shop/piece-gallery";
+import { PIECE_PHOTO_FIT, PieceGallery } from "@/components/shop/piece-gallery";
 import { PiecePurchasePanel } from "@/components/shop/piece-purchase-panel";
+import { ShopPieceCard } from "@/components/shop/shop-piece-card";
 import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -12,6 +13,7 @@ import { nowForCatalog } from "@/lib/catalog-time";
 import { fetchVisibleTags } from "@/lib/tags";
 import { formatDimensions, placeholderShape } from "@/lib/shop";
 import { site } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 // Availability is time- and order-dependent; never serve a build-time snapshot.
 export const dynamic = "force-dynamic";
@@ -43,14 +45,33 @@ const schemaAvailability = {
 
 export default async function PiecePage({ params }: Params) {
   const { slug } = await params;
-  const [preloaded, tags] = await Promise.all([
-    preloadQuery(api.pieces.getBySlug, { slug, now: nowForCatalog() }),
+  const now = nowForCatalog();
+  const [preloaded, tags, catalog] = await Promise.all([
+    preloadQuery(api.pieces.getBySlug, { slug, now }),
     fetchVisibleTags(),
+    fetchQuery(api.pieces.listPublished, { now }),
   ]);
   const piece = preloadedQueryResult(preloaded);
   if (!piece) notFound();
 
   const pieceTags = tags.filter((tag) => piece.tags.includes(tag.slug));
+
+  // "More from this collection": pieces sharing this one's main tag first,
+  // then ones sharing any other tag, with pieces still for sale ahead of sold.
+  const collection = pieceTags.find((tag) => tag.featured) ?? pieceTags[0];
+  const others = catalog.filter((other) => other._id !== piece._id);
+  const forSaleFirst = (list: typeof others) => [
+    ...list.filter((other) => other.availability.state === "available"),
+    ...list.filter((other) => other.availability.state !== "available"),
+  ];
+  const sameCollection = collection
+    ? others.filter((other) => other.tags.includes(collection.slug))
+    : [];
+  const sharedTag = others.filter(
+    (other) =>
+      !sameCollection.includes(other) && other.tags.some((tag) => piece.tags.includes(tag)),
+  );
+  const related = [...forSaleFirst(sameCollection), ...forSaleFirst(sharedTag)].slice(0, 4);
 
   const details: { label: string; value: string }[] = [];
   if (piece.size) details.push({ label: "Size", value: piece.size });
@@ -79,28 +100,32 @@ export default async function PiecePage({ params }: Params) {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-24 pt-6 md:px-10 md:pt-10">
+      <main className="mx-auto w-full max-w-[1400px] flex-1 px-6 pb-24 md:px-10">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <nav aria-label="Breadcrumb" className="text-lg">
-          <Link href="/shop" className="hover:underline hover:underline-offset-4">
-            Shop
-          </Link>
-          <span aria-hidden className="mx-2 font-[system-ui]">
-            ›
-          </span>
-          <span>{piece.title}</span>
-        </nav>
-
-        <div className="mt-8 grid items-start gap-12 md:grid-cols-2 md:gap-16">
-          {/* Stays in view while a long details column scrolls beside it. */}
-          <div className="md:sticky md:top-8">
+        <div className="grid items-start gap-10 md:grid-cols-2 md:gap-16">
+          {/*
+            Breadcrumb, photo and thumbnails pin together while a longer
+            details column scrolls beside them. The photo is capped by the
+            window's height (see PIECE_PHOTO_FIT) so the whole block, thumbnails
+            included, is always on screen while pinned.
+          */}
+          <div className="md:sticky md:top-0 md:py-4">
+            <nav aria-label="Breadcrumb" className="mb-3 truncate text-lg">
+              <Link href="/shop" className="hover:underline hover:underline-offset-4">
+                Shop
+              </Link>
+              <span aria-hidden className="mx-2 font-[system-ui]">
+                ›
+              </span>
+              <span>{piece.title}</span>
+            </nav>
             {piece.imageUrls.length > 0 ? (
               <PieceGallery images={piece.imageUrls} title={piece.title} />
             ) : (
-              <div className="aspect-square bg-muted">
+              <div className={cn("aspect-square bg-muted", PIECE_PHOTO_FIT)}>
                 <PlaceholderVessel
                   shape={placeholderShape(piece.slug)}
                   label={piece.title}
@@ -110,7 +135,7 @@ export default async function PiecePage({ params }: Params) {
             )}
           </div>
 
-          <div className="flex flex-col items-start text-left">
+          <div className="flex flex-col items-start text-left md:pt-14">
             <h1 className="max-w-xl text-balance font-display text-4xl leading-tight md:text-5xl">
               {piece.title}
             </h1>
@@ -153,6 +178,32 @@ export default async function PiecePage({ params }: Params) {
             )}
           </div>
         </div>
+
+        {related.length > 0 && (
+          <section className="mt-20 border-t border-border pt-14 md:mt-28">
+            <div className="flex items-baseline justify-between gap-6">
+              <h2 className="font-display text-3xl md:text-4xl">
+                {collection ? `More from ${collection.name}` : "You may also like"}
+              </h2>
+              <Link
+                href={collection ? `/shop?tag=${collection.slug}` : "/shop"}
+                className="shrink-0 border-b border-current pb-0.5 text-lg"
+              >
+                Shop all
+              </Link>
+            </div>
+            <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-12 md:gap-x-6 lg:grid-cols-4">
+              {related.map((other) => (
+                <ShopPieceCard
+                  key={other._id}
+                  piece={other}
+                  sizes="(min-width: 1024px) 25vw, 50vw"
+                  compact
+                />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
       <SiteFooter />
     </>

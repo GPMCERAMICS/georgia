@@ -43,15 +43,31 @@ export function statusLabel(piece: PublicPiece): string | null {
   return null;
 }
 
-export function ShopPieceCard({ piece }: { piece: PublicPiece }) {
+export function ShopPieceCard({
+  piece,
+  sizes = "(min-width: 640px) 50vw, 100vw",
+  compact = false,
+}: {
+  piece: PublicPiece;
+  sizes?: string;
+  /** Smaller type and a two-line title, for rows of four. */
+  compact?: boolean;
+}) {
   const status = statusLabel(piece);
 
   return (
     <Link href={`/shop/${piece.slug}`} className="group block focus-visible:outline-none">
       <article className="group-focus-visible:ring-2 group-focus-visible:ring-ring">
-        <PieceImage piece={piece} sizes="(min-width: 640px) 50vw, 100vw" />
+        <PieceImage piece={piece} sizes={sizes} />
         <div className="mt-5 flex items-baseline justify-between gap-4">
-          <h3 className="font-display text-xl leading-snug md:text-2xl">{piece.title}</h3>
+          <h3
+            className={cn(
+              "font-display leading-snug",
+              compact ? "line-clamp-2 text-lg md:text-xl" : "text-xl md:text-2xl",
+            )}
+          >
+            {piece.title}
+          </h3>
           {status && <span className="shrink-0 text-sm text-clay">{status}</span>}
         </div>
         <p className={cn("mt-1.5", status === "Sold" && "text-muted-foreground line-through")}>
