@@ -116,11 +116,11 @@ function BestSellerCard({ piece }: { piece: PublicPiece }) {
           </span>
         )}
       </Link>
-      <h3 className="mt-6 font-display text-2xl leading-snug">
+      <h3 className="mt-6 line-clamp-2 font-display text-2xl leading-snug">
         <Link href={`/shop/${piece.slug}`}>{piece.title}</Link>
       </h3>
       <p className="mt-2">{formatPrice(piece.priceCents)}</p>
-      <p className="mt-4 line-clamp-4 leading-relaxed">{piece.description}</p>
+      <p className="mt-4 line-clamp-2 leading-relaxed">{piece.description}</p>
       <div className="mt-7">
         {status ? (
           <Button asChild variant="outline" size="lg" className="px-8">

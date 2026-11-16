@@ -12,7 +12,7 @@ const NAV = [
 ];
 
 /**
- * Links left, wordmark centred, cart right.
+ * Logo left; links and the cart together on the right.
  *
  * `overlay` is for pages that open with a photo banner: the header sits on
  * top of the image in white instead of taking its own white strip.
@@ -25,8 +25,15 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
         overlay ? "text-white" : "bg-background text-foreground",
       )}
     >
-      <div className="mx-auto grid h-20 max-w-[1400px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 md:h-24 md:px-10">
-        <div className="flex items-center">
+      <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between gap-6 px-6 md:h-24 md:px-10">
+        <Link href="/" className="flex items-center gap-2.5" aria-label={`${site.name}, home`}>
+          <Logo className={cn("h-8 w-auto md:h-9", !overlay && "text-primary")} />
+          <span className="font-display text-xl leading-none md:text-2xl">
+            {site.name}
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-5 md:gap-7">
           <nav className="hidden items-center gap-7 md:flex" aria-label="Main">
             {NAV.map((item) => (
               <Link
@@ -39,16 +46,18 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
             ))}
           </nav>
 
+          <CartButton />
+
           {/* Mobile: a native disclosure, so the menu needs no client code. */}
           <details className="group relative md:hidden">
             <summary
-              className="flex cursor-pointer list-none items-center [&::-webkit-details-marker]:hidden"
+              className="flex size-10 cursor-pointer list-none items-center justify-center [&::-webkit-details-marker]:hidden"
               aria-label="Menu"
             >
               <Menu className="size-6" />
             </summary>
             <nav
-              className="absolute left-0 top-full z-50 mt-3 flex w-56 flex-col border border-border bg-background py-2 text-foreground shadow-lg"
+              className="absolute right-0 top-full z-50 mt-3 flex w-56 flex-col border border-border bg-background py-2 text-foreground shadow-lg"
               aria-label="Main"
             >
               {NAV.map((item) => (
@@ -61,17 +70,6 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
               </Link>
             </nav>
           </details>
-        </div>
-
-        <Link href="/" className="flex items-center gap-2.5" aria-label={`${site.name}, home`}>
-          <Logo className={cn("h-8 w-auto md:h-9", !overlay && "text-primary")} />
-          <span className="font-display text-xl leading-none md:text-2xl">
-            {site.name}
-          </span>
-        </Link>
-
-        <div className="flex justify-end">
-          <CartButton />
         </div>
       </div>
     </header>

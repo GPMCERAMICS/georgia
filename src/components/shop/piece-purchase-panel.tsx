@@ -44,13 +44,13 @@ export function PiecePurchasePanel({
   const line = availabilityLine(piece);
 
   return (
-    <div className="mt-5 flex w-full flex-col items-center">
+    <div className="mt-5 flex w-full flex-col items-start">
       <p className="text-2xl">{formatPrice(piece.priceCents)}</p>
       {line && !held && <p className="mt-1 text-muted-foreground">{line}</p>}
 
       {children}
 
-      <div className="mt-8 flex w-full max-w-md flex-col items-stretch gap-3">
+      <div className="mt-8 flex w-full max-w-xl flex-col items-stretch gap-3">
         {sold ? (
           <>
             <Button asChild size="lg" className="h-14 px-6">

@@ -94,8 +94,9 @@ export default async function PiecePage({ params }: Params) {
           <span>{piece.title}</span>
         </nav>
 
-        <div className="mt-8 grid gap-12 md:grid-cols-2 md:gap-16">
-          <div className="md:order-2">
+        <div className="mt-8 grid items-start gap-12 md:grid-cols-2 md:gap-16">
+          {/* Stays in view while a long details column scrolls beside it. */}
+          <div className="md:sticky md:top-8">
             {piece.imageUrls.length > 0 ? (
               <PieceGallery images={piece.imageUrls} title={piece.title} />
             ) : (
@@ -109,14 +110,14 @@ export default async function PiecePage({ params }: Params) {
             )}
           </div>
 
-          <div className="flex flex-col items-center justify-center text-center md:order-1">
+          <div className="flex flex-col items-start text-left">
             <h1 className="max-w-xl text-balance font-display text-4xl leading-tight md:text-5xl">
               {piece.title}
             </h1>
             {piece.size && <p className="mt-3 text-muted-foreground">{piece.size}</p>}
 
             <PiecePurchasePanel preloaded={preloaded}>
-              <div className="mx-auto mt-6 max-w-xl space-y-4 text-lg leading-relaxed">
+              <div className="mt-6 max-w-xl space-y-4 text-lg leading-relaxed">
                 {piece.description.split("\n\n").map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
@@ -124,11 +125,11 @@ export default async function PiecePage({ params }: Params) {
             </PiecePurchasePanel>
 
             {details.length > 0 && (
-              <dl className="mt-12 w-full max-w-md divide-y divide-border border-y border-border text-left">
+              <dl className="mt-12 w-full max-w-xl divide-y divide-border border-y border-border">
                 {details.map((detail) => (
-                  <div key={detail.label} className="grid grid-cols-[120px_1fr] gap-4 py-3">
-                    <dt className="text-muted-foreground">{detail.label}</dt>
-                    <dd>{detail.value}</dd>
+                  <div key={detail.label} className="flex items-baseline justify-between gap-8 py-3">
+                    <dt className="shrink-0 text-muted-foreground">{detail.label}</dt>
+                    <dd className="text-right">{detail.value}</dd>
                   </div>
                 ))}
               </dl>
