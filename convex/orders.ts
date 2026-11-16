@@ -351,10 +351,11 @@ export const markRefunded = internalMutation({
     const already = order.refundedCents ?? 0;
     if (total <= already && (!full || order.status === "refunded")) return null;
 
+    const refundedAt = Date.now();
     if (full && order.status !== "refunded") {
-      await setOrderStatus(ctx, order._id, "refunded", { refundedCents: total });
+      await setOrderStatus(ctx, order._id, "refunded", { refundedCents: total, refundedAt });
     } else {
-      await ctx.db.patch("orders", order._id, { refundedCents: total });
+      await ctx.db.patch("orders", order._id, { refundedCents: total, refundedAt });
     }
     if (total > already) {
       await ctx.scheduler.runAfter(0, internal.emails.orderRefunded, {

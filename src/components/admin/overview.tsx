@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { money, orderStatusMeta, shortDate, startOfMonth } from "@/lib/admin";
+import { money, orderStatusFor, shortDate, startOfMonth } from "@/lib/admin";
 import { PageHeader } from "./admin-shell";
 
 function Stat({
@@ -129,8 +129,8 @@ export function Overview() {
                       {order.paidAt ? shortDate(order.paidAt) : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={orderStatusMeta[order.status].variant}>
-                        {orderStatusMeta[order.status].label}
+                      <Badge variant={orderStatusFor(order).variant}>
+                        {orderStatusFor(order).label}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">{money(order.totalCents)}</TableCell>

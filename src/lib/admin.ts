@@ -40,6 +40,20 @@ export const orderStatusMeta: Record<Doc<"orders">["status"], { label: string; v
   refunded: { label: "Refunded", variant: "destructive" },
 };
 
+/**
+ * The badge for an order. A pickup order moves through the same statuses as
+ * a shipped one, under names that fit: it is prepared, made ready and
+ * collected rather than shipped and delivered.
+ */
+export function orderStatusFor(order: Pick<Doc<"orders">, "status" | "shippingMethod">) {
+  const meta = orderStatusMeta[order.status];
+  if (order.shippingMethod !== "pickup") return meta;
+  if (order.status === "paid") return { ...meta, label: "To prepare" };
+  if (order.status === "shipped") return { ...meta, label: "Ready for pickup" };
+  if (order.status === "delivered") return { ...meta, label: "Picked up" };
+  return meta;
+}
+
 export const inquiryStatusMeta: Record<
   Doc<"inquiries">["status"],
   { label: string; variant: BadgeVariant }

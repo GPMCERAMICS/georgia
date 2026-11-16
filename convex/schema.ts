@@ -173,6 +173,8 @@ export default defineSchema({
     notes: v.string(),
     // Running total refunded through Stripe; absent until a refund happens.
     refundedCents: v.optional(v.number()),
+    // When the most recent refund was recorded.
+    refundedAt: v.optional(v.number()),
     // The shopper ticked "send me news" in the cart. Acted on once paid.
     newsletterOptIn: v.optional(v.boolean()),
     // Set when an abandoned-checkout reminder has been queued for this order,
@@ -226,6 +228,21 @@ export default defineSchema({
     .index("by_email", ["email"])
     .index("by_token", ["token"])
     .index("by_newsletter", ["newsletter"]),
+
+  /**
+   * One row per email attempted for an order, so the order's page can show
+   * what the customer was sent and whether it went out.
+   */
+  emailLog: defineTable({
+    orderId: v.id("orders"),
+    // "confirmation", "ownerNotice", "shipped", "trackingUpdated",
+    // "pickupReady", "delivered", "collected", "refunded", "reminder".
+    kind: v.string(),
+    to: v.string(),
+    sentAt: v.number(),
+    ok: v.boolean(),
+    error: v.union(v.string(), v.null()),
+  }).index("by_orderId", ["orderId"]),
 
   /** Every abandoned-checkout reminder sent, for the per-person cap. */
   cartReminders: defineTable({

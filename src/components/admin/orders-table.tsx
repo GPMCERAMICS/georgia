@@ -8,7 +8,7 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { money, orderStatusMeta, shortDate } from "@/lib/admin";
+import { money, orderStatusFor, shortDate } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./admin-shell";
 
@@ -100,8 +100,8 @@ export function OrdersTable() {
                     {order.shippingMethod === "pickup" ? "Pickup" : "Ship"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={orderStatusMeta[order.status].variant}>
-                      {orderStatusMeta[order.status].label}
+                    <Badge variant={orderStatusFor(order).variant}>
+                      {orderStatusFor(order).label}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">{money(order.totalCents)}</TableCell>

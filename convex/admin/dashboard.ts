@@ -72,6 +72,7 @@ export const stats = query({
         _id: order._id,
         orderNumber: order.orderNumber,
         status: order.status,
+        shippingMethod: order.shippingMethod,
         name: order.name,
         email: order.email,
         totalCents: order.totalCents,

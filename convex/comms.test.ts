@@ -313,3 +313,146 @@ describe("email templates", () => {
     expect(trackingUrl("USPS", null)).toBeNull();
   });
 });
+
+describe("every order state change sends its email", () => {
+  const ADMIN_EMAIL = "georgia@example.com";
+
+  async function asAdmin(t: T) {
+    process.env.ADMIN_EMAIL = ADMIN_EMAIL;
+    const userId = await t.run(async (ctx) => ctx.db.insert("users", { email: ADMIN_EMAIL }));
+    return t.withIdentity({ subject: `${userId}|session` });
+  }
+
+  /** Names of the email jobs queued so far, with their main argument. */
+  async function emailJobs(t: T) {
+    const jobs = await t.run(async (ctx) => ctx.db.system.query("_scheduled_functions").collect());
+    return jobs
+      .filter((job) => job.name.startsWith("emails"))
+      .map((job) => {
+        const args = job.args[0] as { event?: string; full?: boolean };
+        const name = job.name.replace(/^emails(\.js)?:/, "");
+        return args.event ? `${name}:${args.event}` : name;
+      });
+  }
+
+  async function paidOrder(t: T, method: "ship" | "pickup") {
+    const pieceId = await t.run(async (ctx) =>
+      ctx.db.insert("pieces", pieceFields({ slug: `piece-${method}` })),
+    );
+    const reserved = await t.mutation(internal.orders.reserve, {
+      pieceIds: [pieceId],
+      shippingMethod: method,
+      shipTo: method === "ship" ? shipTo : undefined,
+      email: "pat@example.com",
+    });
+    await t.mutation(internal.orders.attachSession, {
+      orderId: reserved.orderId,
+      stripeSessionId: `cs_${method}`,
+    });
+    await t.mutation(internal.orders.markPaid, {
+      stripeSessionId: `cs_${method}`,
+      stripePaymentIntentId: `pi_${method}`,
+      email: "pat@example.com",
+      name: "Pat Buyer",
+      shippingAddress: null,
+      shippingCents: 0,
+      taxCents: 0,
+      totalCents: 18000,
+    });
+    return reserved.orderId as Id<"orders">;
+  }
+
+  test("a shipped order: paid, shipped, tracking corrected, delivered, refunded", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await paidOrder(t, "ship");
+    expect(await emailJobs(t)).toEqual(["orderPaid"]);
+
+    await admin.mutation(api.admin.orders.markShipped, { id, carrier: "USPS", trackingNumber: "9400" });
+    // Saving the same tracking again is not a change and must not email.
+    expect(
+      await admin.mutation(api.admin.orders.updateTracking, { id, carrier: "USPS", trackingNumber: "9400" }),
+    ).toEqual({ changed: false });
+    await admin.mutation(api.admin.orders.updateTracking, { id, carrier: "UPS", trackingNumber: "1Z999" });
+    await admin.mutation(api.admin.orders.markDelivered, { id });
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_ship",
+      amountRefundedCents: 18000,
+      full: true,
+    });
+
+    expect(await emailJobs(t)).toEqual([
+      "orderPaid",
+      "orderUpdate:shipped",
+      "orderUpdate:trackingUpdated",
+      "orderUpdate:delivered",
+      "orderRefunded",
+    ]);
+    const order = await t.run(async (ctx) => ctx.db.get("orders", id));
+    expect(order).toMatchObject({ status: "refunded", carrier: "UPS", trackingNumber: "1Z999" });
+    expect(order?.shippedAt).not.toBeNull();
+    expect(order?.deliveredAt).not.toBeNull();
+    expect(order?.refundedAt).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  test("a pickup order: paid, ready for pickup, picked up", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await paidOrder(t, "pickup");
+
+    await admin.mutation(api.admin.orders.markShipped, { id, carrier: "", trackingNumber: "" });
+    await expect(
+      admin.mutation(api.admin.orders.updateTracking, { id, carrier: "USPS", trackingNumber: "1" }),
+    ).rejects.toThrow("shipped order");
+    await admin.mutation(api.admin.orders.markDelivered, { id });
+
+    expect(await emailJobs(t)).toEqual(["orderPaid", "orderUpdate:shipped", "orderUpdate:delivered"]);
+    const order = await t.run(async (ctx) => ctx.db.get("orders", id));
+    expect(order).toMatchObject({ status: "delivered", shippingMethod: "pickup" });
+    vi.useRealTimers();
+  });
+
+  test("steps cannot be skipped or repeated", async () => {
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await paidOrder(t, "ship");
+    await expect(admin.mutation(api.admin.orders.markDelivered, { id })).rejects.toThrow("shipped order");
+    await admin.mutation(api.admin.orders.markShipped, { id, carrier: "USPS", trackingNumber: "9400" });
+    await expect(
+      admin.mutation(api.admin.orders.markShipped, { id, carrier: "USPS", trackingNumber: "9400" }),
+    ).rejects.toThrow("paid order");
+  });
+
+  test("send again is offered only for emails the order has reached", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await paidOrder(t, "ship");
+    await expect(
+      admin.mutation(api.admin.orders.resendEmail, { id, email: "shipped" }),
+    ).rejects.toThrow("not been shipped");
+    await admin.mutation(api.admin.orders.resendEmail, { id, email: "confirmation" });
+    expect(await emailJobs(t)).toEqual(["orderPaid", "orderPaid"]);
+    vi.useRealTimers();
+  });
+
+  test("each attempted email is recorded on the order, including a failure", async () => {
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await paidOrder(t, "ship");
+    await t.mutation(internal.emails.logSend, {
+      orderId: id,
+      kind: "confirmation",
+      to: "pat@example.com",
+      ok: false,
+      error: "Resend 403: domain not verified",
+    });
+    const log = await admin.query(api.admin.orders.emails, { id });
+    expect(log).toHaveLength(1);
+    expect(log[0]).toMatchObject({ kind: "confirmation", ok: false, to: "pat@example.com" });
+    await expect(t.query(api.admin.orders.emails, { id })).rejects.toThrow("Not authorised");
+  });
+});

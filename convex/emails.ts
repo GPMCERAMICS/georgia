@@ -1,5 +1,7 @@
 import { v } from "convex/values";
-import { internalAction, internalQuery } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery } from "./_generated/server";
+import type { ActionCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { adminEmails } from "./lib/adminEmails";
 import * as templates from "./lib/emailTemplates";
@@ -86,6 +88,53 @@ async function deliver(
     subject: email.subject,
     text: email.text,
     html: email.html,
+  });
+}
+
+/** Records one attempted order email. See `emailLog` in the schema. */
+export const logSend = internalMutation({
+  args: {
+    orderId: v.id("orders"),
+    kind: v.string(),
+    to: v.string(),
+    ok: v.boolean(),
+    error: v.union(v.string(), v.null()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("emailLog", { ...args, sentAt: Date.now() });
+    return null;
+  },
+});
+
+/**
+ * Sends an order email and writes the outcome to the order's log. A failed
+ * send is recorded, not thrown: the order page shows it and offers to send
+ * again, and one failure never stops the other emails in the same action.
+ */
+async function deliverForOrder(
+  ctx: ActionCtx,
+  orderId: Id<"orders">,
+  kind: string,
+  email: Email,
+  options: { to: string[]; copyOwners?: string[]; replyTo?: string },
+): Promise<void> {
+  let error: string | null = null;
+  if (!process.env.RESEND_API_KEY) {
+    error = "Email is not set up on this deployment (RESEND_API_KEY is missing).";
+  } else {
+    try {
+      await deliver(email, options);
+    } catch (caught) {
+      error = caught instanceof Error ? caught.message : "The email could not be sent.";
+      console.error(`email ${kind} for order ${orderId} failed:`, error);
+    }
+  }
+  await ctx.runMutation(internal.emails.logSend, {
+    orderId,
+    kind,
+    to: options.to.join(", "),
+    ok: error === null,
+    error: error === null ? null : error.slice(0, 500),
   });
 }
 
@@ -177,17 +226,21 @@ export const orderContext = internalQuery({
 
 /** Payment landed: confirmation to the buyer, a separate notice to the owner. */
 export const orderPaid = internalAction({
-  args: { orderId: v.id("orders") },
+  // `customerOnly` is for "send again" from the dashboard: the owner does not
+  // need a second New order notice.
+  args: { orderId: v.id("orders"), customerOnly: v.optional(v.boolean()) },
   handler: async (ctx, args) => {
     const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
     if (!context) return null;
     const order: OrderData = { ...context.order, siteUrl: siteUrl() };
 
     if (order.email) {
-      await deliver(templates.orderConfirmation(order), { to: [order.email] });
+      await deliverForOrder(ctx, args.orderId, "confirmation", templates.orderConfirmation(order), {
+        to: [order.email],
+      });
     }
-    if (context.owners.length > 0) {
-      await deliver(templates.newOrderForOwner(order), {
+    if (context.owners.length > 0 && !args.customerOnly) {
+      await deliverForOrder(ctx, args.orderId, "ownerNotice", templates.newOrderForOwner(order), {
         to: context.owners,
         replyTo: order.email ?? undefined,
       });
@@ -215,12 +268,25 @@ export const orderUpdate = internalAction({
     const pickup = order.shippingMethod === "pickup";
 
     let email: Email;
-    if (args.event === "delivered") email = templates.orderDelivered(order);
-    else if (pickup) email = templates.pickupReady(order);
-    else if (args.event === "trackingUpdated") email = templates.shippingUpdate(order);
-    else email = templates.orderShipped(order);
+    let kind: string;
+    if (args.event === "delivered") {
+      email = templates.orderDelivered(order);
+      kind = pickup ? "collected" : "delivered";
+    } else if (pickup) {
+      email = templates.pickupReady(order);
+      kind = "pickupReady";
+    } else if (args.event === "trackingUpdated") {
+      email = templates.shippingUpdate(order);
+      kind = "trackingUpdated";
+    } else {
+      email = templates.orderShipped(order);
+      kind = "shipped";
+    }
 
-    await deliver(email, { to: [context.order.email], copyOwners: context.owners });
+    await deliverForOrder(ctx, args.orderId, kind, email, {
+      to: [context.order.email],
+      copyOwners: context.owners,
+    });
     return null;
   },
 });
@@ -231,7 +297,10 @@ export const orderRefunded = internalAction({
     const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
     if (!context || !context.order.email) return null;
     const order: OrderData = { ...context.order, siteUrl: siteUrl() };
-    await deliver(
+    await deliverForOrder(
+      ctx,
+      args.orderId,
+      "refunded",
       templates.orderRefunded(order, { amountCents: args.amountCents, full: args.full }),
       { to: [context.order.email], copyOwners: context.owners },
     );
@@ -253,7 +322,10 @@ export const cartReminder = internalAction({
     const claim = await ctx.runMutation(internal.orders.claimCartReminder, args);
     if (!claim) return null;
     const base = siteUrl();
-    await deliver(
+    await deliverForOrder(
+      ctx,
+      args.orderId,
+      "reminder",
       templates.cartReminder({
         siteUrl: base,
         name: claim.name,

@@ -158,3 +158,64 @@ export const updateNotes = mutation({
     return null;
   },
 });
+
+/** The emails attempted for an order, oldest first, for its Activity panel. */
+export const emails = query({
+  args: { id: v.id("orders") },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const log = await ctx.db
+      .query("emailLog")
+      .withIndex("by_orderId", (q) => q.eq("orderId", args.id))
+      .take(100);
+    return log.map((entry) => ({
+      _id: entry._id,
+      kind: entry.kind,
+      to: entry.to,
+      sentAt: entry.sentAt,
+      ok: entry.ok,
+      error: entry.error,
+    }));
+  },
+});
+
+/**
+ * Sends the customer one of the order's emails again — after a failed send,
+ * or when they say it never arrived. Only emails that fit the order's
+ * current state can be re-sent.
+ */
+export const resendEmail = mutation({
+  args: {
+    id: v.id("orders"),
+    email: v.union(v.literal("confirmation"), v.literal("shipped"), v.literal("delivered")),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const order = await ctx.db.get("orders", args.id);
+    if (!order) throw new Error("Order not found");
+    if (!order.email) throw new Error("This order has no email address");
+
+    if (args.email === "confirmation") {
+      if (order.paidAt === null) throw new Error("This order has not been paid");
+      await ctx.scheduler.runAfter(0, internal.emails.orderPaid, {
+        orderId: args.id,
+        customerOnly: true,
+      });
+    } else if (args.email === "shipped") {
+      if (order.status !== "shipped" && order.status !== "delivered") {
+        throw new Error("This order has not been shipped or made ready yet");
+      }
+      await ctx.scheduler.runAfter(0, internal.emails.orderUpdate, {
+        orderId: args.id,
+        event: "shipped",
+      });
+    } else {
+      if (order.status !== "delivered") throw new Error("This order has not been delivered yet");
+      await ctx.scheduler.runAfter(0, internal.emails.orderUpdate, {
+        orderId: args.id,
+        event: "delivered",
+      });
+    }
+    return null;
+  },
+});

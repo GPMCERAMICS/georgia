@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { longDate, money, orderStatusMeta } from "@/lib/admin";
+import { longDate, money, orderStatusFor } from "@/lib/admin";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message
@@ -27,6 +27,8 @@ export function OrderDetail({ id }: { id: string }) {
   const markShipped = useMutation(api.admin.orders.markShipped);
   const markDelivered = useMutation(api.admin.orders.markDelivered);
   const updateTracking = useMutation(api.admin.orders.updateTracking);
+  const resendEmail = useMutation(api.admin.orders.resendEmail);
+  const emailLog = useQuery(api.admin.orders.emails, { id: id as Id<"orders"> });
   const cancel = useMutation(api.admin.orders.cancel);
   const updateNotes = useMutation(api.admin.orders.updateNotes);
 
@@ -52,13 +54,7 @@ export function OrderDetail({ id }: { id: string }) {
   }
 
   const pickup = order.shippingMethod === "pickup";
-  // A pickup order moves through the same statuses under friendlier names.
-  const meta =
-    pickup && order.status === "shipped"
-      ? { ...orderStatusMeta.shipped, label: "Ready for pickup" }
-      : pickup && order.status === "delivered"
-        ? { ...orderStatusMeta.delivered, label: "Picked up" }
-        : orderStatusMeta[order.status];
+  const meta = orderStatusFor(order);
   const newCarrier = carrierDraft ?? order.carrier ?? "";
   const newTracking = trackingDraft ?? order.trackingNumber ?? "";
   const trackingDirty =
@@ -321,6 +317,14 @@ export function OrderDetail({ id }: { id: string }) {
         </div>
 
         <aside className="flex flex-col gap-6">
+          <OrderActivity
+            order={order}
+            emails={emailLog}
+            busy={busy}
+            onResend={(email) =>
+              run("Sending it again", () => resendEmail({ id: order._id, email }))
+            }
+          />
           <section className="rounded-2xl border border-border bg-card p-5">
             <h2 className="font-display text-xl">Customer</h2>
             <p className="mt-3">{order.name ?? "—"}</p>
@@ -367,3 +371,129 @@ export function OrderDetail({ id }: { id: string }) {
     </div>
   );
 }
+
+
+type Resendable = "confirmation" | "shipped" | "delivered";
+
+const EMAIL_LABELS: Record<string, { label: string; resend?: Resendable }> = {
+  confirmation: { label: "Order confirmation", resend: "confirmation" },
+  ownerNotice: { label: "New order notice to you" },
+  shipped: { label: "Shipped email", resend: "shipped" },
+  trackingUpdated: { label: "Tracking update" },
+  pickupReady: { label: "Ready for pickup email", resend: "shipped" },
+  delivered: { label: "Delivered email", resend: "delivered" },
+  collected: { label: "Thank-you after pickup", resend: "delivered" },
+  refunded: { label: "Refund email" },
+  reminder: { label: "Checkout reminder" },
+};
+
+type LoggedEmail = {
+  _id: string;
+  kind: string;
+  to: string;
+  sentAt: number;
+  ok: boolean;
+  error: string | null;
+};
+
+/**
+ * What has happened to the order, oldest first: each step it has reached and
+ * each email that went out because of it. A failed email says why and can be
+ * sent again from here.
+ */
+function OrderActivity({
+  order,
+  emails,
+  busy,
+  onResend,
+}: {
+  order: {
+    _creationTime: number;
+    paidAt: number | null;
+    shippedAt: number | null;
+    deliveredAt: number | null;
+    refundedAt?: number;
+    refundedCents?: number;
+    status: string;
+    shippingMethod: "ship" | "pickup";
+    totalCents: number;
+  };
+  emails: LoggedEmail[] | undefined;
+  busy: boolean;
+  onResend: (email: Resendable) => void;
+}) {
+  const pickup = order.shippingMethod === "pickup";
+  type Entry = { at: number; key: string; node: React.ReactNode };
+  const entries: Entry[] = [];
+  const step = (at: number | null | undefined, key: string, text: string) => {
+    if (at) entries.push({ at, key, node: <span className="font-medium">{text}</span> });
+  };
+  step(order._creationTime, "started", "Checkout started");
+  step(order.paidAt, "paid", "Paid");
+  step(order.shippedAt, "shipped", pickup ? "Marked ready for pickup" : "Marked shipped");
+  step(order.deliveredAt, "delivered", pickup ? "Marked picked up" : "Marked delivered");
+  step(
+    order.refundedAt,
+    "refunded",
+    order.status === "refunded"
+      ? "Refunded in full"
+      : `Refunded ${money(order.refundedCents ?? 0)} of ${money(order.totalCents)}`,
+  );
+
+  for (const email of emails ?? []) {
+    const meta = EMAIL_LABELS[email.kind] ?? { label: email.kind };
+    entries.push({
+      // Emails follow the step that caused them, even within the same second.
+      at: email.sentAt + 1,
+      key: email._id,
+      node: (
+        <span className={email.ok ? "text-muted-foreground" : "text-destructive"}>
+          {meta.label} {email.ok ? "sent" : "failed"}
+          <span className="block text-xs">to {email.to}</span>
+          {!email.ok && email.error && <span className="block text-xs">{email.error}</span>}
+          {meta.resend && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onResend(meta.resend!)}
+              className="mt-0.5 block text-xs text-foreground underline underline-offset-2 hover:no-underline disabled:opacity-50"
+            >
+              Send again
+            </button>
+          )}
+        </span>
+      ),
+    });
+  }
+  entries.sort((a, b) => a.at - b.at);
+
+  return (
+    <section className="border border-border bg-card p-5">
+      <h2 className="font-display text-xl">Activity</h2>
+      <ol className="mt-3 space-y-3 text-sm">
+        {entries.map((entry) => (
+          <li key={entry.key} className="grid grid-cols-[1fr_auto] gap-3">
+            <span className="min-w-0 break-words">{entry.node}</span>
+            <time className="whitespace-nowrap text-xs text-muted-foreground">
+              {activityTime(entry.at)}
+            </time>
+          </li>
+        ))}
+      </ol>
+      {emails !== undefined && emails.length === 0 && order.paidAt !== null && (
+        <p className="mt-3 text-xs text-muted-foreground">
+          No emails are recorded for this order. Orders from before email tracking was added
+          show none.
+        </p>
+      )}
+    </section>
+  );
+}
+
+const activityTime = (ms: number) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(ms));

@@ -97,6 +97,7 @@ const sections: Section[] = [
         items: [
           <>The order appears under {go("/admin/orders", "Orders")} as {b("To ship")}, the piece shows as Sold, the buyer gets a confirmation email and you get a New order email.</>,
           <>{b("Checking out")} and {b("Expired")} orders are checkouts that were started but not paid. They need nothing from you.</>,
+          <>An order is finished when it is {b("Delivered")}, or {b("Picked up")} for a pickup order. There is no separate step to close it.</>,
         ],
       },
     ],
@@ -182,6 +183,14 @@ const sections: Section[] = [
           <>{b("Refunded")}: when you refund in Stripe.</>,
           <>{b("Commission request received")}: to anyone who sends the commission form. You get the request itself.</>,
           <>{b("Checkout reminders")} and the {b("newsletter welcome")}: see the next two sections.</>,
+        ],
+      },
+      {
+        kind: "points",
+        title: "Checking what was sent",
+        items: [
+          <>Every order has an {b("Activity")} panel listing each step it has reached and each email that went out, with the time.</>,
+          <>If an email failed, the panel says why. {b("Send again")} re-sends the confirmation, shipped or delivered email, for a failure or for a buyer who says it never arrived.</>,
         ],
       },
       {
