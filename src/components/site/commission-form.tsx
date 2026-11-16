@@ -54,13 +54,13 @@ export function CommissionForm({
       });
       form.reset();
       setStatus("success");
-      toast.success("Thanks! Your inquiry is on its way to Georgia.");
+      toast.success("Thanks! Your inquiry is on its way to me.");
     } catch (err) {
       setStatus("idle");
       toast.error(
         err instanceof Error && err.message
           ? err.message.replace(/^.*Uncaught Error: /, "").split("\n")[0]
-          : "Something went wrong. Please email us directly.",
+          : "Something went wrong. Please email me directly.",
       );
     }
   }
@@ -75,7 +75,7 @@ export function CommissionForm({
         </div>
         <h3 className="font-display text-2xl">Message received</h3>
         <p className="mt-2 text-muted-foreground">
-          Georgia reads every inquiry personally and will be in touch soon.
+          I read every inquiry personally and will be in touch soon.
         </p>
         <Button
           variant="outline"
@@ -103,7 +103,7 @@ export function CommissionForm({
 
       {piece && (
         <p className="mb-5 rounded-lg bg-secondary/60 px-4 py-3 text-sm text-secondary-foreground">
-          Asking about <span className="font-medium">{piece.title}</span>. Tell Georgia what you&apos;d
+          Asking about <span className="font-medium">{piece.title}</span>. Tell me what you&apos;d
           like changed, added, or made just for you.
         </p>
       )}
@@ -142,7 +142,7 @@ export function CommissionForm({
       </div>
 
       <div className="mt-5 grid gap-2">
-        <Label htmlFor="message">Tell Georgia about your piece</Label>
+        <Label htmlFor="message">Tell me about your piece</Label>
         <Textarea
           id="message"
           name="message"

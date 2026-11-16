@@ -27,9 +27,9 @@ export function OrderConfirmation({ sessionId }: { sessionId: string | null }) {
   if (!sessionId || order === null) {
     return (
       <div>
-        <h1 className="font-display text-4xl">We couldn&apos;t find that order</h1>
+        <h1 className="font-display text-4xl">I couldn&apos;t find that order</h1>
         <p className="mt-4 text-muted-foreground">
-          If you were charged, your receipt from Stripe has the details. Email Georgia and she will sort it out.
+          If you were charged, your receipt from Stripe has the details. Email me and I will sort it out.
         </p>
         <Button asChild className="mt-8 rounded-full px-6">
           <Link href="/shop">Back to the shop</Link>
@@ -57,8 +57,8 @@ export function OrderConfirmation({ sessionId }: { sessionId: string | null }) {
       <p className="mt-4 max-w-prose text-muted-foreground">
         {order.email ? `A confirmation is on its way to ${order.email}. ` : ""}
         {order.shippingMethod === "pickup"
-          ? "Georgia will be in touch to arrange your pickup."
-          : "Georgia will pack your pieces by hand and email you when they ship."}
+          ? "I will be in touch to arrange your pickup."
+          : "I will pack your pieces by hand and email you when they ship."}
       </p>
 
       <div className="mt-10 rounded-2xl border border-border bg-card p-6">

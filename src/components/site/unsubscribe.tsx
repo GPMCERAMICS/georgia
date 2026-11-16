@@ -12,13 +12,13 @@ const COPY: Record<Kind, { question: string; confirm: string; done: string; undo
   newsletter: {
     question: "Stop receiving news from GPM Ceramics?",
     confirm: "Unsubscribe",
-    done: "You have been unsubscribed. You will not receive any more news from us.",
+    done: "You have been unsubscribed. You will not receive any more news from GPM Ceramics.",
     undo: "Subscribe again",
   },
   reminders: {
     question: "Stop receiving reminders about unfinished checkouts?",
     confirm: "Stop reminders",
-    done: "Done. We will not send you any more checkout reminders.",
+    done: "Done. You will not get any more checkout reminders.",
     undo: "Turn reminders back on",
   },
 };
@@ -40,8 +40,8 @@ export function Unsubscribe({ token, kind }: { token: string; kind: Kind }) {
       <div>
         <h1 className="font-display text-4xl">This link has expired</h1>
         <p className="mt-4 text-lg leading-relaxed">
-          We could not find your email preferences from this link. Reply to any email from us
-          and we will take you off the list by hand.
+          Your email preferences could not be found from this link. Reply to any email from
+          GPM Ceramics and I will take you off the list by hand.
         </p>
       </div>
     );

@@ -43,7 +43,7 @@ export function ShopGrid({
           Pieces are on their way
         </h2>
         <p className="mt-4 max-w-prose text-lg">
-          Georgia is photographing and listing her available work now. In the
+          I am photographing and listing my available work now. In the
           meantime, commissions are open.
         </p>
         <Button asChild size="lg" className="mt-8 px-8">

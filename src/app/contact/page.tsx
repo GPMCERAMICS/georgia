@@ -52,7 +52,7 @@ export default function ContactPage() {
               <h2 className="font-display text-3xl md:text-4xl">Get in touch</h2>
               <p className="mx-auto mt-5 max-w-sm text-lg leading-relaxed">
                 Questions about a piece, an order, or something made just for
-                you — Georgia would love to hear from you.
+                you — I would love to hear from you.
               </p>
             </div>
             <div className="space-y-6 text-xl">

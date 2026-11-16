@@ -17,7 +17,7 @@ const faqs = [
   {
     question: "How long does a custom commission take?",
     answer:
-      "Every commissioned piece is thrown, sculpted, and hand painted to order, " +
+      "I throw, sculpt, and hand paint every commissioned piece to order, " +
       "so most commissions ship in 4–6 weeks. More detailed pieces — " +
       "commemorative platters with portraits, lettering, or custom scenes — can " +
       "take 6–8 weeks. You'll get a timeline estimate with your quote before " +
@@ -27,10 +27,10 @@ const faqs = [
     question: "How much does shipping cost?",
     answer:
       "Shipping is free on every piece — the price you see is the price " +
-      "you pay. We ship within the continental US only (the " +
-      "lower 48 states and DC). Everything is packed by hand with generous " +
+      "you pay. I ship within the continental US only (the " +
+      "lower 48 states and DC). I pack everything by hand with generous " +
       "padding. Local pickup is also available — choose it at checkout and " +
-      "we'll arrange a time.",
+      "I'll email you to arrange a time.",
   },
   {
     question: "Are the pieces food safe?",
@@ -51,17 +51,17 @@ const faqs = [
   {
     question: "Can I return or exchange a piece?",
     answer:
-      "If a piece arrives damaged, send a photo within 48 hours and it will be " +
-      "replaced or refunded in full. Because commissions are made just for you, " +
-      "they aren't returnable — but Georgia shares progress along the way so " +
+      "If a piece arrives damaged, send me a photo within 48 hours and I will " +
+      "replace it or refund you in full. Because commissions are made just for you, " +
+      "they aren't returnable — but I share progress along the way so " +
       "the finished piece is never a surprise.",
   },
   {
     question: "Do you take wholesale or bulk orders?",
     answer:
-      "Small-batch orders for weddings, events, and shops are considered on a " +
-      "case-by-case basis depending on the studio schedule. Get in touch with " +
-      "your date and quantities and we'll see what's possible.",
+      "I consider small-batch orders for weddings, events, and shops on a " +
+      "case-by-case basis depending on my studio schedule. Get in touch with " +
+      "your date and quantities and I'll see what's possible.",
   },
 ];
 

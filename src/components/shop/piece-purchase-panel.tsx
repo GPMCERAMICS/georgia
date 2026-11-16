@@ -57,7 +57,7 @@ export function PiecePurchasePanel({
               <Link href={`/commissions?piece=${piece.slug}`}>Commission something like this</Link>
             </Button>
             <p className="text-sm text-muted-foreground">
-              This piece has found a home. Georgia can make something in the same spirit, made just for you.
+              This piece has found a home. I can make something in the same spirit, made just for you.
             </p>
           </>
         ) : held ? (
