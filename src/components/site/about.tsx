@@ -21,7 +21,7 @@ export function About() {
         </div>
 
         <div className="order-1 md:order-2">
-          <h2 className="text-balance font-display text-4xl leading-tight md:text-5xl">
+          <h2 className="text-balance font-display text-3xl leading-tight sm:text-4xl lg:text-5xl">
             {site.about.heading}
           </h2>
           <div className="mt-6 space-y-5 text-lg leading-relaxed">

@@ -80,7 +80,7 @@ export function OrderDetail({ id }: { id: string }) {
     <div>
       <Link
         href="/admin/orders"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-3 inline-flex items-center gap-1 py-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" /> Orders
       </Link>

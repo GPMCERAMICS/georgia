@@ -94,7 +94,7 @@ export function CartDrawer() {
                       <button
                         type="button"
                         onClick={() => remove(piece._id)}
-                        className="mt-auto w-fit text-xs text-muted-foreground underline"
+                        className="mt-auto w-fit py-1.5 text-sm text-muted-foreground underline"
                       >
                         Remove
                       </button>

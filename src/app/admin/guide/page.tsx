@@ -304,10 +304,10 @@ export default function AdminGuidePage() {
       />
       <div className="grid gap-10 lg:grid-cols-[220px_minmax(0,1fr)]">
         <nav aria-label="Guide sections" className="lg:sticky lg:top-6 lg:self-start">
-          <ol className="grid gap-1.5 text-sm sm:grid-cols-2 lg:grid-cols-1">
+          <ol className="grid text-sm sm:grid-cols-2 lg:grid-cols-1">
             {sections.map((section) => (
               <li key={section.id}>
-                <a href={`#${section.id}`} className="text-muted-foreground hover:text-foreground hover:underline">
+                <a href={`#${section.id}`} className="inline-block py-1.5 text-muted-foreground hover:text-foreground hover:underline">
                   {section.title}
                 </a>
               </li>

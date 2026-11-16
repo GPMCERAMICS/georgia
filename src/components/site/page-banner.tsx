@@ -46,7 +46,7 @@ export function PageBanner({
 /** The centred statement the short banners carry. */
 export function BannerStatement({ children }: { children: ReactNode }) {
   return (
-    <p className="mx-auto max-w-4xl text-balance px-6 pb-14 text-center font-display text-2xl leading-snug md:text-4xl md:leading-snug">
+    <p className="mx-auto max-w-4xl text-balance px-6 pb-14 text-center font-display text-xl leading-snug sm:text-2xl md:text-4xl md:leading-snug">
       {children}
     </p>
   );

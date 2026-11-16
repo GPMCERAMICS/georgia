@@ -98,16 +98,16 @@ export function SignIn() {
       <div className="mt-2 flex flex-col gap-1 text-sm text-muted-foreground">
         {flow === "signIn" && (
           <>
-            <button type="button" className="w-fit underline" onClick={() => setFlow("reset")}>
+            <button type="button" className="w-fit py-1.5 underline" onClick={() => setFlow("reset")}>
               Forgot your password?
             </button>
-            <button type="button" className="w-fit underline" onClick={() => setFlow("signUp")}>
+            <button type="button" className="w-fit py-1.5 underline" onClick={() => setFlow("signUp")}>
               First time? Create your password
             </button>
           </>
         )}
         {flow !== "signIn" && (
-          <button type="button" className="w-fit underline" onClick={() => setFlow("signIn")}>
+          <button type="button" className="w-fit py-1.5 underline" onClick={() => setFlow("signIn")}>
             Back to sign in
           </button>
         )}

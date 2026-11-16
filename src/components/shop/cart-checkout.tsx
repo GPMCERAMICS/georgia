@@ -160,7 +160,7 @@ export function CartCheckout() {
   }
 
   return (
-    <div className="grid gap-10 md:grid-cols-[1fr_360px]">
+    <div className="grid gap-10 lg:grid-cols-[1fr_360px]">
       <ul className="divide-y divide-border">
         {lines.map((piece) => {
           const sold = piece.availability.state !== "available";
@@ -196,7 +196,7 @@ export function CartCheckout() {
                 <button
                   type="button"
                   onClick={() => remove(piece._id)}
-                  className="mt-auto w-fit text-sm text-muted-foreground underline"
+                  className="mt-auto w-fit py-2 text-sm text-muted-foreground underline"
                 >
                   Remove
                 </button>
@@ -364,7 +364,7 @@ export function CartCheckout() {
         <button
           type="button"
           onClick={clear}
-          className="mt-4 w-full text-center text-xs text-muted-foreground underline"
+          className="mt-2 w-full py-2.5 text-center text-sm text-muted-foreground underline"
         >
           Empty cart
         </button>

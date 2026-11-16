@@ -108,7 +108,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <Logo className="h-8 w-auto text-primary" />
           <span className="font-display text-base leading-none">
             GPM Ceramics
-            <span className="block text-[0.6rem] font-sans uppercase tracking-[0.28em] text-muted-foreground">
+            <span className="block text-xs font-sans uppercase tracking-[0.28em] text-muted-foreground">
               Dashboard
             </span>
           </span>

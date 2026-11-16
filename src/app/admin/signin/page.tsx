@@ -9,7 +9,7 @@ export default function SignInPage() {
           <Logo className="h-10 w-auto text-primary" />
           <span className="font-display text-xl leading-none">
             GPM Ceramics
-            <span className="block text-[0.65rem] font-sans uppercase tracking-[0.28em] text-muted-foreground">
+            <span className="block text-xs font-sans uppercase tracking-[0.28em] text-muted-foreground">
               Dashboard
             </span>
           </span>

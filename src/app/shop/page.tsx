@@ -47,19 +47,19 @@ export default async function ShopPage({
         </h1>
         {pieces.length > 0 && tags.length > 0 && (
           <nav
-            className="mt-6 flex flex-wrap items-center justify-center gap-y-2 text-lg"
+            className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-lg sm:gap-x-0 sm:gap-y-2"
             aria-label="Filter by tag"
           >
             {[{ slug: undefined, name: "All" }, ...tags].map((tag, i) => {
               const active = tag.slug === activeTag?.slug;
               return (
                 <span key={tag.slug ?? "all"} className="flex items-center">
-                  {i > 0 && <span aria-hidden className="mx-4 h-4 w-px bg-border" />}
+                  {i > 0 && <span aria-hidden className="mx-4 hidden h-4 w-px bg-border sm:block" />}
                   <Link
                     href={tag.slug ? `/shop?tag=${tag.slug}` : "/shop"}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "border-b pb-0.5 transition-colors",
+                      "border-b px-1 py-1 transition-colors",
                       active
                         ? "border-current font-medium"
                         : "border-transparent hover:border-current",

@@ -90,9 +90,13 @@ export function HomeCatalog({
               Shop all
             </Link>
           </div>
-          <div className="mt-8 grid gap-x-3 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-            {bestSellers.map((piece) => (
-              <BestSellerCard key={piece._id} piece={piece} />
+          <div className="mt-8 grid gap-x-3 gap-y-14 sm:grid-cols-2 md:grid-cols-3">
+            {bestSellers.map((piece, i) => (
+              // Two across leaves a third card stranded on its own row, so it
+              // waits until there is room for three.
+              <div key={piece._id} className={i === 2 ? "sm:max-md:hidden" : undefined}>
+                <BestSellerCard piece={piece} />
+              </div>
             ))}
           </div>
         </section>
@@ -107,7 +111,7 @@ function BestSellerCard({ piece }: { piece: PublicPiece }) {
   const inCart = cart.has(piece._id);
 
   return (
-    <article className="flex flex-col">
+    <article className="flex h-full flex-col">
       <Link href={`/shop/${piece.slug}`} className="group relative block">
         <PieceImage piece={piece} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
         {status && (

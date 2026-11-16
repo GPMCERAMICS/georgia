@@ -112,9 +112,9 @@ export default async function PiecePage({ params }: Params) {
             window's height (see PIECE_PHOTO_FIT) so the whole block, thumbnails
             included, is always on screen while pinned.
           */}
-          <div className="md:sticky md:top-24 md:py-4">
-            <nav aria-label="Breadcrumb" className="mb-3 truncate text-lg">
-              <Link href="/shop" className="hover:underline hover:underline-offset-4">
+          <div className="min-w-0 md:sticky md:top-24 md:py-4">
+            <nav aria-label="Breadcrumb" className="mb-3 truncate py-1 text-lg">
+              <Link href="/shop" className="inline-block py-1 hover:underline hover:underline-offset-4">
                 Shop
               </Link>
               <span aria-hidden className="mx-2 font-[system-ui]">
@@ -135,8 +135,8 @@ export default async function PiecePage({ params }: Params) {
             )}
           </div>
 
-          <div className="flex flex-col items-start text-left md:pt-14">
-            <h1 className="max-w-xl text-balance font-display text-4xl leading-tight md:text-5xl">
+          <div className="flex min-w-0 flex-col items-start text-left md:pt-14">
+            <h1 className="max-w-xl text-balance font-display text-3xl leading-tight sm:text-4xl lg:text-5xl">
               {piece.title}
             </h1>
             {piece.size && <p className="mt-3 text-muted-foreground">{piece.size}</p>}

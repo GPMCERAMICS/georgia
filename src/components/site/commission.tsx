@@ -15,7 +15,7 @@ export function Commission() {
     >
       <div className="mx-auto grid max-w-[1400px] items-center gap-12 px-6 py-20 md:grid-cols-2 md:gap-16 md:px-10 md:py-28">
         <div>
-          <h2 className="text-balance font-display text-4xl leading-tight md:text-5xl">
+          <h2 className="text-balance font-display text-3xl leading-tight sm:text-4xl lg:text-5xl">
             {commission.heading}
           </h2>
           <p className="mt-5 text-lg leading-relaxed">

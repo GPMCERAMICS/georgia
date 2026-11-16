@@ -60,7 +60,7 @@ export default function ContactPage() {
                 <h3 className="font-medium">Email</h3>
                 <a
                   href={`mailto:${site.email}`}
-                  className="underline underline-offset-4 hover:no-underline"
+                  className="inline-block py-1 underline underline-offset-4 hover:no-underline"
                 >
                   {site.email}
                 </a>
@@ -72,7 +72,7 @@ export default function ContactPage() {
                     href={site.social.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline underline-offset-4 hover:no-underline"
+                    className="inline-block py-1 underline underline-offset-4 hover:no-underline"
                   >
                     Facebook
                   </a>

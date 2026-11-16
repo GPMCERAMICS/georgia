@@ -51,7 +51,7 @@ export function SiteHeader({ overlay = false }: { overlay?: boolean }) {
       <div className="mx-auto flex h-20 max-w-[1400px] items-center justify-between gap-6 px-6 md:h-24 md:px-10">
         <Link href="/" className="flex items-center gap-2.5" aria-label={`${site.name}, home`}>
           <Logo className={cn("h-8 w-auto transition-colors duration-300 md:h-9", !transparent && "text-primary")} />
-          <span className="font-display text-xl leading-none md:text-2xl">
+          <span className="whitespace-nowrap font-display text-lg leading-none sm:text-xl md:text-2xl">
             {site.name}
           </span>
         </Link>
