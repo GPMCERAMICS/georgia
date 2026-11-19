@@ -6,14 +6,17 @@ import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 /** Sends one made-up example of every email the shop sends to a single address. */
 export function EmailTest() {
   const sendSamples = useAction(api.admin.emailTest.sendSamples);
   const [sampleTo, setSampleTo] = useState("");
   const [sendingSamples, setSendingSamples] = useState(false);
+  const [which, setWhich] = useState<"all" | "customInvoice">("all");
   const [samples, setSamples] = useState<{
     from: string;
+    to: string[];
     sent: string[];
     failed: { label: string; error: string }[];
   } | null>(null);
@@ -24,7 +27,12 @@ export function EmailTest() {
     setSamples(null);
     setSamplesFailure(null);
     try {
-      setSamples(await sendSamples({ to: sampleTo.trim() }));
+      setSamples(
+        await sendSamples({
+          to: sampleTo.trim(),
+          only: which === "customInvoice" ? "customInvoice" : undefined,
+        }),
+      );
     } catch (error) {
       setSamplesFailure(
         error instanceof Error && error.message
@@ -44,14 +52,27 @@ export function EmailTest() {
         about fifteen seconds.
       </p>
       <div className="grid gap-1.5">
-        <Label htmlFor="sampleTo">Send them to</Label>
+        <Label htmlFor="sampleWhich">What to send</Label>
+        <NativeSelect
+          id="sampleWhich"
+          value={which}
+          onChange={(e) => setWhich(e.target.value as "all" | "customInvoice")}
+        >
+          <option value="all">Every email</option>
+          <option value="customInvoice">Custom order invoices only, with the PDF attached</option>
+        </NativeSelect>
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="sampleTo">Send to</Label>
         <Input
           id="sampleTo"
-          type="email"
-          placeholder="you@example.com"
+          placeholder="you@example.com, someone@example.com"
           value={sampleTo}
           onChange={(e) => setSampleTo(e.target.value)}
         />
+        <p className="text-xs text-muted-foreground">
+          Up to five addresses, separated by commas.
+        </p>
       </div>
       <Button
         type="button"
@@ -60,7 +81,7 @@ export function EmailTest() {
         disabled={sendingSamples || sampleTo.trim() === ""}
         onClick={() => void handleSamples()}
       >
-        {sendingSamples ? "Sending samples…" : "Send all samples"}
+        {sendingSamples ? "Sending…" : which === "all" ? "Send all samples" : "Send invoice samples"}
       </Button>
       {samplesFailure && (
         <p role="alert" className="text-sm text-destructive">
@@ -70,7 +91,7 @@ export function EmailTest() {
       {samples && (
         <div className="grid gap-2 text-sm">
           <p>
-            {samples.sent.length} sent from {samples.from}
+            {samples.sent.length} sent to {samples.to.join(", ")} from {samples.from}
             {samples.failed.length > 0 ? `, ${samples.failed.length} failed` : ""}.
           </p>
           {samples.failed.length > 0 && (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
@@ -603,18 +603,26 @@ function Editor({ order }: { order: AdminCustomOrder }) {
             <h2 className="font-display text-xl">Payments</h2>
             <dl className="mt-3 space-y-3 text-sm">
               <PaymentRow
+                orderId={order._id}
+                stage="deposit"
                 label="Deposit"
                 amountCents={order.totals.depositCents}
                 paidAt={order.depositPaidAt}
                 paidCents={order.depositPaidCents}
+                refundedCents={order.depositRefundedCents ?? 0}
                 paymentIntentId={order.depositPaymentIntentId}
+                canCancel={order.status !== "shipped" && order.status !== "delivered" && order.status !== "cancelled"}
               />
               <PaymentRow
+                orderId={order._id}
+                stage="balance"
                 label="Balance"
                 amountCents={order.totals.balanceCents}
                 paidAt={order.balancePaidAt}
                 paidCents={order.balancePaidCents}
+                refundedCents={order.balanceRefundedCents ?? 0}
                 paymentIntentId={order.balancePaymentIntentId}
+                canCancel={order.status !== "shipped" && order.status !== "delivered" && order.status !== "cancelled"}
               />
             </dl>
             {order.shippingAddress && (
@@ -661,7 +669,7 @@ function Editor({ order }: { order: AdminCustomOrder }) {
               <ConfirmDialog
                 trigger={<Button variant="ghost" className="w-fit text-destructive" />}
                 title="Cancel this custom order?"
-                description="The invoice link stops taking payment. Money already paid is not returned by this: refund it in Stripe."
+                description="The invoice link stops taking payment. Money already paid is not returned by this: use Refund under Payments."
                 confirmLabel="Cancel order"
                 onConfirm={() => run("Order cancelled", () => cancel({ id: order._id }), false)}
               >
@@ -675,19 +683,57 @@ function Editor({ order }: { order: AdminCustomOrder }) {
   );
 }
 
+/**
+ * One of the order's two payments: what was paid, and a way to send some or
+ * all of it back. A payment recorded by hand never went through Stripe, so
+ * there is nothing here to refund it with.
+ */
 function PaymentRow({
+  orderId,
+  stage,
   label,
   amountCents,
   paidAt,
   paidCents,
+  refundedCents,
   paymentIntentId,
+  canCancel,
 }: {
+  orderId: Id<"customOrders">;
+  stage: "deposit" | "balance";
   label: string;
   amountCents: number;
   paidAt: number | null;
   paidCents: number | null;
+  refundedCents: number;
   paymentIntentId: string | null;
+  canCancel: boolean;
 }) {
+  const refund = useAction(api.admin.refunds.refundCustom);
+  const remainingCents = (paidCents ?? 0) - refundedCents;
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState<string | null>(null);
+  const [cancelOrder, setCancelOrder] = useState(false);
+
+  const amountText = amount ?? dollars(remainingCents);
+  const refundCents = toCents(amountText);
+  const valid = Number.isFinite(refundCents) && refundCents > 0 && refundCents <= remainingCents;
+  const lower = label.toLowerCase();
+
+  async function submit() {
+    try {
+      await refund({ id: orderId, stage, amountCents: refundCents, cancelOrder: canCancel && cancelOrder });
+      toast.success(`Refunded ${money(refundCents)} — customer emailed`);
+      setOpen(false);
+      setAmount(null);
+      setCancelOrder(false);
+    } catch (error) {
+      toast.error(errorMessage(error, "The refund did not go through"));
+      // Rethrow so the confirm dialog stays open on a failure.
+      throw error;
+    }
+  }
+
   return (
     <div>
       <div className="flex justify-between">
@@ -718,6 +764,82 @@ function PaymentRow({
           </>
         )}
       </dd>
+      {refundedCents > 0 && (
+        <dd className="mt-0.5 text-xs text-destructive">Refunded {money(refundedCents)}</dd>
+      )}
+
+      {paidAt !== null && paymentIntentId !== null && remainingCents > 0 && !open && (
+        <dd>
+          <button
+            type="button"
+            className="mt-1 py-1 text-xs underline underline-offset-2 hover:no-underline"
+            onClick={() => setOpen(true)}
+          >
+            Refund {lower}…
+          </button>
+        </dd>
+      )}
+      {paidAt !== null && paymentIntentId === null && (paidCents ?? 0) > 0 && (
+        <dd className="mt-1 text-xs text-muted-foreground">
+          Paid outside the site, so return it the same way.
+        </dd>
+      )}
+
+      {open && (
+        <dd className="mt-3 grid gap-3 border border-destructive/40 p-3">
+          <div className="grid gap-1.5">
+            <Label htmlFor={`refund-${stage}`}>Amount to refund (USD)</Label>
+            <Input
+              id={`refund-${stage}`}
+              type="number"
+              step="0.01"
+              min="0.01"
+              max={dollars(remainingCents)}
+              value={amountText}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Up to {money(remainingCents)}.</p>
+          </div>
+          {canCancel && (
+            <label className="flex items-start gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-primary"
+                checked={cancelOrder}
+                onChange={(e) => setCancelOrder(e.target.checked)}
+              />
+              <span>
+                Cancel this order as well
+                <span className="block text-xs text-muted-foreground">
+                  The invoice link stops taking payment.
+                </span>
+              </span>
+            </label>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <ConfirmDialog
+              trigger={<Button variant="destructive" size="sm" disabled={!valid} />}
+              title={`Refund ${money(valid ? refundCents : 0)} of the ${lower}?`}
+              description={`The money goes back to the customer's original payment method and they are emailed. This cannot be undone.${canCancel && cancelOrder ? " The order will be cancelled." : ""}`}
+              confirmLabel="Refund"
+              onConfirm={submit}
+            >
+              Refund {valid ? money(refundCents) : ""}
+            </ConfirmDialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setOpen(false);
+                setAmount(null);
+                setCancelOrder(false);
+              }}
+            >
+              Never mind
+            </Button>
+          </div>
+        </dd>
+      )}
     </div>
   );
 }

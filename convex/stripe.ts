@@ -125,6 +125,11 @@ export const handleWebhook = internalAction({
             amountRefundedCents: charge.amount_refunded,
             full: charge.refunded,
           });
+          // The same event for a custom order's deposit or balance.
+          await ctx.runMutation(internal.customOrders.markRefundedByIntent, {
+            paymentIntentId,
+            amountRefundedCents: charge.amount_refunded,
+          });
         }
         return { handled: event.type };
       }

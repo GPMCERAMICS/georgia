@@ -6,6 +6,7 @@ import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { customOrderTotals } from "./lib/customOrder";
 import { sampleEmails } from "./lib/emailSamples";
+import { buildInvoicePdf, pdfSafe } from "./lib/invoicePdf";
 
 const modules = import.meta.glob("./**/*.ts");
 type T = ReturnType<typeof convexTest>;
@@ -232,5 +233,129 @@ describe("custom order emails", () => {
     for (const id of ["custom-deposit", "custom-deposit-paid", "custom-final", "custom-paid", "owner-custom-paid"]) {
       expect(ids, id).toContain(id);
     }
+  });
+});
+
+describe("refunding a custom order", () => {
+  async function depositPaidOrder(t: T) {
+    const admin = await asAdmin(t);
+    const { id, token } = await draft(t, admin);
+    await admin.mutation(api.admin.customOrders.sendDepositInvoice, { id });
+    await paid(t, id, "deposit", 20000);
+    return { admin, id, token };
+  }
+  const refundJobs = async (t: T) =>
+    (await t.run(async (ctx) => ctx.db.system.query("_scheduled_functions").collect()))
+      .filter((job) => job.name.includes("customOrderRefunded"))
+      .map((job) => job.args[0] as { amountCents: number; full: boolean });
+
+  test("part of the deposit, then the rest, each emailed once", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const { id, token } = await depositPaidOrder(t);
+
+    await t.mutation(internal.customOrders.recordRefund, {
+      id,
+      stage: "deposit",
+      refundedCents: 5000,
+      cancelOrder: false,
+    });
+    // Stripe's webhook for the same refund must not email a second time.
+    await t.mutation(internal.customOrders.markRefundedByIntent, {
+      paymentIntentId: "pi_deposit",
+      amountRefundedCents: 5000,
+    });
+    expect((await t.run(async (ctx) => ctx.db.get("customOrders", id)))?.status).toBe("inProgress");
+
+    await t.mutation(internal.customOrders.recordRefund, {
+      id,
+      stage: "deposit",
+      refundedCents: 20000,
+      cancelOrder: true,
+    });
+    const order = await t.run(async (ctx) => ctx.db.get("customOrders", id));
+    expect(order).toMatchObject({ status: "cancelled", depositRefundedCents: 20000 });
+    expect(await refundJobs(t)).toEqual([
+      { id, amountCents: 5000, full: false },
+      { id, amountCents: 15000, full: true },
+    ]);
+    // The customer's invoice shows the money back and takes no more payment.
+    expect(await t.query(api.customOrders.invoice, { token })).toMatchObject({
+      refundedCents: 20000,
+      payable: null,
+    });
+    vi.useRealTimers();
+  });
+
+  test("a refund made in Stripe is picked up for either payment", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const { admin, id } = await depositPaidOrder(t);
+    await admin.mutation(api.admin.customOrders.update, { id, ...totem, shippingCents: 6500 });
+    await admin.mutation(api.admin.customOrders.sendFinalInvoice, { id });
+    await paid(t, id, "balance", 36500);
+
+    await t.mutation(internal.customOrders.markRefundedByIntent, {
+      paymentIntentId: "pi_balance",
+      amountRefundedCents: 6500,
+    });
+    const order = await t.run(async (ctx) => ctx.db.get("customOrders", id));
+    expect(order).toMatchObject({ status: "paid", balanceRefundedCents: 6500 });
+    expect(order?.depositRefundedCents).toBeUndefined();
+    expect(await refundJobs(t)).toEqual([{ id, amountCents: 6500, full: false }]);
+    expect(
+      await t.mutation(internal.customOrders.markRefundedByIntent, {
+        paymentIntentId: "pi_unknown",
+        amountRefundedCents: 100,
+      }),
+    ).toBeNull();
+    vi.useRealTimers();
+  });
+
+  test("the refund action is admin-only, and a payment recorded by hand cannot be refunded by card", async () => {
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const { id } = await draft(t, admin);
+    await admin.mutation(api.admin.customOrders.recordPayment, { id, stage: "deposit" });
+    const args = { id, stage: "deposit" as const, amountCents: 1000, cancelOrder: false };
+    await expect(t.action(api.admin.refunds.refundCustom, args)).rejects.toThrow("Not authorised");
+    await expect(admin.action(api.admin.refunds.refundCustom, args)).rejects.toThrow(
+      "not taken by card",
+    );
+  });
+});
+
+describe("the invoice PDF", () => {
+  const sample = sampleEmails("https://example.test").find((s) => s.id === "custom-deposit")!;
+
+  test("the custom order emails that should carry a PDF say what to build it from", () => {
+    const withInvoice = sampleEmails("https://example.test").filter((s) => s.invoice);
+    expect(withInvoice.map((s) => s.id)).toEqual([
+      "custom-deposit",
+      "custom-deposit-paid",
+      "custom-final",
+      "custom-paid",
+    ]);
+  });
+
+  test("renders a real PDF, even with characters the built-in typefaces lack", async () => {
+    const bytes = await buildInvoicePdf(
+      { ...sample.invoice!.data, name: "Zoë “Quotes” 北京 ✓", title: "A piece — with dashes…" },
+      "deposit",
+      Date.UTC(2026, 10, 19),
+    );
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+    expect(bytes.length).toBeGreaterThan(5000);
+    expect(pdfSafe("北京 “x” ✓")).toBe('?? "x" ?');
+  });
+
+  test("the render action returns it base64-encoded for the email", async () => {
+    const t = convexTest(schema, modules);
+    const base64 = await t.action(internal.invoicePdf.render, {
+      data: sample.invoice!.data,
+      stage: "deposit",
+      issuedAt: Date.UTC(2026, 10, 19),
+    });
+    expect(atob(base64).startsWith("%PDF-")).toBe(true);
   });
 });

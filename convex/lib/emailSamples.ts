@@ -17,6 +17,8 @@ export type Sample = {
   /** Present when this email did not exist before this round of work. */
   isNew: boolean;
   email: Email;
+  /** Set on emails that carry a PDF: what the attached invoice is built from. */
+  invoice?: { data: CustomInvoiceData; stage: "deposit" | "balance" | "receipt" };
 };
 
 export type SampleImages = { plate: string; platter: string; totem: string };
@@ -273,6 +275,7 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       audience: "Customer, with a copy to the owner",
       isNew: true,
       email: templates.customDepositInvoice(customQuote),
+      invoice: { data: customQuote, stage: "deposit" },
     },
     {
       id: "custom-deposit-paid",
@@ -281,6 +284,7 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       audience: "Customer",
       isNew: true,
       email: templates.customPaymentReceived({ ...customQuote, depositPaid: true }, "deposit"),
+      invoice: { data: { ...customQuote, depositPaid: true }, stage: "receipt" },
     },
     {
       id: "custom-final",
@@ -289,6 +293,7 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       audience: "Customer, with a copy to the owner",
       isNew: true,
       email: templates.customFinalInvoice(customFinal),
+      invoice: { data: customFinal, stage: "balance" },
     },
     {
       id: "custom-paid",
@@ -297,6 +302,7 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       audience: "Customer",
       isNew: true,
       email: templates.customPaymentReceived(customFinal, "balance"),
+      invoice: { data: { ...customFinal, balancePaid: true }, stage: "receipt" },
     },
     {
       id: "owner-custom-paid",

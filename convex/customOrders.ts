@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, query } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
-import type { QueryCtx } from "./_generated/server";
+import type { Doc, Id } from "./_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { customOrderTotals, payableStage } from "./lib/customOrder";
 import { shippingAddress } from "./schema";
@@ -47,6 +47,7 @@ export const invoice = query({
       trackingNumber: order.trackingNumber,
       shippedAt: order.shippedAt,
       totals: customOrderTotals(order),
+      refundedCents: (order.depositRefundedCents ?? 0) + (order.balanceRefundedCents ?? 0),
       payable: payableStage(order.status),
     };
   },
@@ -139,5 +140,109 @@ export const emailContext = internalQuery({
       pickupInstructions: settings.pickup.instructions,
       notifyEmail: settings.notifyEmail.trim(),
     };
+  },
+});
+
+// ---------- refunds ----------
+
+type Stage = "deposit" | "balance";
+
+/** What the dashboard's refund action needs before it calls Stripe. */
+export const refundContext = internalQuery({
+  args: { id: v.id("customOrders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("customOrders", args.id);
+    if (!order) return null;
+    return {
+      number: order.number,
+      status: order.status,
+      deposit: {
+        paymentIntentId: order.depositPaymentIntentId,
+        paidCents: order.depositPaidCents ?? 0,
+        refundedCents: order.depositRefundedCents ?? 0,
+      },
+      balance: {
+        paymentIntentId: order.balancePaymentIntentId,
+        paidCents: order.balancePaidCents ?? 0,
+        refundedCents: order.balanceRefundedCents ?? 0,
+      },
+    };
+  },
+});
+
+/**
+ * Writes down a refund against one of a custom order's two payments.
+ * `refundedCents` is the running total for that payment, so a repeat of the
+ * same news (Stripe's webhook following the dashboard's own update) changes
+ * nothing and emails nobody twice.
+ */
+async function applyRefund(
+  ctx: MutationCtx,
+  order: Doc<"customOrders">,
+  stage: Stage,
+  refundedCents: number,
+  cancelOrder: boolean,
+) {
+  const already = stage === "deposit" ? (order.depositRefundedCents ?? 0) : (order.balanceRefundedCents ?? 0);
+  const patch: Partial<Doc<"customOrders">> = {};
+  if (refundedCents > already) {
+    if (stage === "deposit") patch.depositRefundedCents = refundedCents;
+    else patch.balanceRefundedCents = refundedCents;
+  }
+  if (cancelOrder && order.status !== "shipped" && order.status !== "delivered") {
+    patch.status = "cancelled";
+  }
+  if (Object.keys(patch).length > 0) await ctx.db.patch("customOrders", order._id, patch);
+
+  if (refundedCents > already) {
+    const depositRefunded = stage === "deposit" ? refundedCents : (order.depositRefundedCents ?? 0);
+    const balanceRefunded = stage === "balance" ? refundedCents : (order.balanceRefundedCents ?? 0);
+    const paid = (order.depositPaidCents ?? 0) + (order.balancePaidCents ?? 0);
+    await ctx.scheduler.runAfter(0, internal.emails.customOrderRefunded, {
+      id: order._id,
+      amountCents: refundedCents - already,
+      full: paid > 0 && depositRefunded + balanceRefunded >= paid,
+    });
+  }
+}
+
+/** The dashboard's refund action, once Stripe has moved the money. */
+export const recordRefund = internalMutation({
+  args: {
+    id: v.id("customOrders"),
+    stage: v.union(v.literal("deposit"), v.literal("balance")),
+    refundedCents: v.number(),
+    cancelOrder: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("customOrders", args.id);
+    if (!order) throw new Error("Custom order not found");
+    await applyRefund(ctx, order, args.stage, args.refundedCents, args.cancelOrder);
+    return null;
+  },
+});
+
+/**
+ * Stripe's `charge.refunded`, for a refund made in the Stripe dashboard.
+ * Finds the custom order by whichever of its two payments was refunded.
+ */
+export const markRefundedByIntent = internalMutation({
+  args: { paymentIntentId: v.string(), amountRefundedCents: v.number() },
+  handler: async (ctx, args) => {
+    let stage: Stage = "deposit";
+    let order = await ctx.db
+      .query("customOrders")
+      .withIndex("by_depositPaymentIntentId", (q) => q.eq("depositPaymentIntentId", args.paymentIntentId))
+      .unique();
+    if (!order) {
+      stage = "balance";
+      order = await ctx.db
+        .query("customOrders")
+        .withIndex("by_balancePaymentIntentId", (q) => q.eq("balancePaymentIntentId", args.paymentIntentId))
+        .unique();
+    }
+    if (!order) return null;
+    await applyRefund(ctx, order, stage, args.amountRefundedCents, false);
+    return order._id as Id<"customOrders">;
   },
 });

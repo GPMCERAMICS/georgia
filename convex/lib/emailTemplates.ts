@@ -810,6 +810,8 @@ export type CustomInvoiceData = {
   depositCents: number;
   balanceCents: number;
   depositPaid: boolean;
+  /** True once the final payment is in. Only the PDF receipt needs it. */
+  balancePaid?: boolean;
   customerNote: string;
 };
 

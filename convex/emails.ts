@@ -47,6 +47,8 @@ export async function send(message: {
   html?: string;
   bcc?: string[];
   replyTo?: string;
+  /** Files to attach; `content` is base64. */
+  attachments?: { filename: string; content: string }[];
 }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -68,6 +70,8 @@ export async function send(message: {
       subject: message.subject,
       text: message.text,
       html: message.html,
+      attachments:
+        message.attachments && message.attachments.length > 0 ? message.attachments : undefined,
       reply_to: message.replyTo ?? replyToAddress(),
     }),
   });
@@ -80,12 +84,18 @@ export async function send(message: {
 /** Sends a rendered template. `copyOwners` blind-copies the shop owner. */
 async function deliver(
   email: Email,
-  options: { to: string[]; copyOwners?: string[]; replyTo?: string },
+  options: {
+    to: string[];
+    copyOwners?: string[];
+    replyTo?: string;
+    attachments?: { filename: string; content: string }[];
+  },
 ): Promise<void> {
   await send({
     to: options.to,
     bcc: options.copyOwners,
     replyTo: options.replyTo,
+    attachments: options.attachments,
     subject: email.subject,
     text: email.text,
     html: email.html,
@@ -425,6 +435,7 @@ async function loadCustomContext(ctx: ActionCtx, id: Id<"customOrders">) {
     depositCents: totals.depositCents,
     balanceCents: totals.balanceCents,
     depositPaid: order.depositPaidAt !== null,
+    balancePaid: order.balancePaidAt !== null,
     customerNote: order.customerNote,
   };
   let owners: string[] = [];
@@ -437,6 +448,29 @@ async function loadCustomContext(ctx: ActionCtx, id: Id<"customOrders">) {
     }
   }
   return { ...found, data, owners };
+}
+
+/**
+ * The invoice as a PDF attachment. If the PDF cannot be made the email still
+ * goes, without it: the link in the email shows the same invoice.
+ */
+export async function invoiceAttachment(
+  ctx: ActionCtx,
+  data: CustomInvoiceData,
+  stage: "deposit" | "balance" | "receipt",
+): Promise<{ filename: string; content: string }[]> {
+  try {
+    const content: string = await ctx.runAction(internal.invoicePdf.render, {
+      data,
+      stage,
+      issuedAt: Date.now(),
+    });
+    const kind = stage === "receipt" ? "Receipt" : "Invoice";
+    return [{ filename: `GPM-Ceramics-${kind}-${data.number}.pdf`, content }];
+  } catch (error) {
+    console.error("invoice PDF could not be made:", error);
+    return [];
+  }
 }
 
 /** The same shape the shop's order emails use, for shipped and delivered. */
@@ -486,7 +520,11 @@ export const customOrderInvoice = internalAction({
       args.stage === "deposit"
         ? templates.customDepositInvoice(context.data)
         : templates.customFinalInvoice(context.data);
-    await deliver(email, { to: [context.order.email], copyOwners: context.owners });
+    await deliver(email, {
+      to: [context.order.email],
+      copyOwners: context.owners,
+      attachments: await invoiceAttachment(ctx, context.data, args.stage),
+    });
     return null;
   },
 });
@@ -500,6 +538,7 @@ export const customOrderPaid = internalAction({
     try {
       await deliver(templates.customPaymentReceived(context.data, args.stage), {
         to: [context.order.email],
+        attachments: await invoiceAttachment(ctx, context.data, "receipt"),
       });
     } catch (error) {
       console.error("custom order receipt failed:", error);
@@ -528,6 +567,23 @@ export const customOrderUpdate = internalAction({
           ? templates.pickupReady(order)
           : templates.orderShipped(order);
     await deliver(email, { to: [context.order.email], copyOwners: context.owners });
+    return null;
+  },
+});
+
+/** Money back on a custom order: tells the customer how much. */
+export const customOrderRefunded = internalAction({
+  args: { id: v.id("customOrders"), amountCents: v.number(), full: v.boolean() },
+  handler: async (ctx, args) => {
+    const context = await loadCustomContext(ctx, args.id);
+    if (!context) return null;
+    await deliver(
+      templates.orderRefunded(customAsOrder(context), {
+        amountCents: args.amountCents,
+        full: args.full,
+      }),
+      { to: [context.order.email], copyOwners: context.owners },
+    );
     return null;
   },
 });

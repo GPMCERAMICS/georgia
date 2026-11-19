@@ -192,6 +192,12 @@ export function InvoiceBody({
             <dd>−{money(totals.balanceCents)}</dd>
           </div>
         )}
+        {invoice.refundedCents > 0 && (
+          <div className="flex justify-between text-muted-foreground">
+            <dt>Refunded to you</dt>
+            <dd>{money(invoice.refundedCents)}</dd>
+          </div>
+        )}
         <div className="flex justify-between border-t border-border pt-3 font-display text-2xl">
           <dt>{invoice.payable ? "Due now" : balancePaid ? "Balance" : "Still to pay"}</dt>
           <dd>

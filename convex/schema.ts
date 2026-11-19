@@ -280,6 +280,9 @@ export default defineSchema({
     balancePaidCents: v.union(v.number(), v.null()),
     depositPaymentIntentId: v.union(v.string(), v.null()),
     balancePaymentIntentId: v.union(v.string(), v.null()),
+    // Running totals refunded against each payment; absent until a refund.
+    depositRefundedCents: v.optional(v.number()),
+    balanceRefundedCents: v.optional(v.number()),
     shippingAddress: v.union(shippingAddress, v.null()),
     shippedAt: v.union(v.number(), v.null()),
     deliveredAt: v.union(v.number(), v.null()),
@@ -288,7 +291,9 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_status", ["status"])
-    .index("by_inquiryId", ["inquiryId"]),
+    .index("by_inquiryId", ["inquiryId"])
+    .index("by_depositPaymentIntentId", ["depositPaymentIntentId"])
+    .index("by_balancePaymentIntentId", ["balancePaymentIntentId"]),
 
   /**
    * One row per email address we may write to beyond a single order: the

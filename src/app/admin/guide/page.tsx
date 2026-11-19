@@ -230,7 +230,9 @@ const sections: Section[] = [
           <>{b("Paid another way")}: if a deposit or balance is paid by cash, cheque or transfer, use the link under the Next step button to record it.</>,
           <>{b("The invoice link")}: shown on the order once the quote is sent. Copy it to text or message a customer. It never expires and always shows the latest invoice.</>,
           <>{b("What locks")}: once the deposit is paid its amount is fixed. Once the balance is paid the invoice cannot change.</>,
-          <>{b("Cancelling")}: stops the link taking payment. It does not return money already paid; refund that in Stripe from the Payments box.</>,
+          <>{b("PDF invoice")}: the quote, the final invoice and both receipts go out with the invoice attached as a PDF.</>,
+          <>{b("Refunding")}: in the {b("Payments")} box, choose {b("Refund deposit")} or {b("Refund balance")}, enter the amount, and confirm. The customer is emailed. Tick {b("Cancel this order as well")} if the job is off.</>,
+          <>{b("Cancelling")}: stops the link taking payment. It does not return money already paid; refund that first. A payment recorded by hand has to be returned the way it was paid.</>,
         ],
       },
       {
@@ -281,7 +283,7 @@ const sections: Section[] = [
       },
       {
         kind: "note",
-        text: <>To see them all, go to {go("/admin/settings", "Settings")} and use {b("Sample of every email")} to send yourself one of each.</>,
+        text: <>To see them all, go to {go("/admin/settings", "Settings")} and use {b("Sample of every email")} to send yourself one of each. It can also send just the custom order invoices, with their PDF, to several addresses at once.</>,
       },
     ],
   },

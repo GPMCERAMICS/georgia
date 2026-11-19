@@ -86,3 +86,56 @@ export const refund = action({
     return { refundedCents, full };
   },
 });
+
+/**
+ * Refunds one of a custom order's two payments, the deposit or the balance,
+ * in full or in part, and optionally calls the order off.
+ *
+ * Only payments taken by card through the invoice page can be refunded here;
+ * one recorded by hand never went through Stripe.
+ */
+export const refundCustom = action({
+  args: {
+    id: v.id("customOrders"),
+    stage: v.union(v.literal("deposit"), v.literal("balance")),
+    amountCents: v.number(),
+    cancelOrder: v.boolean(),
+  },
+  handler: async (ctx, args): Promise<{ refundedCents: number }> => {
+    await ctx.runQuery(internal.admin.emailTest.assertAdmin, {});
+    const order = await ctx.runQuery(internal.customOrders.refundContext, { id: args.id });
+    if (!order) throw new Error("Custom order not found");
+    const payment = order[args.stage];
+    if (payment.paymentIntentId === null) {
+      throw new Error("This payment was not taken by card here, so it cannot be refunded from the dashboard");
+    }
+    const remaining = payment.paidCents - payment.refundedCents;
+    if (!Number.isInteger(args.amountCents) || args.amountCents <= 0) {
+      throw new Error("Enter an amount to refund");
+    }
+    if (args.amountCents > remaining) {
+      throw new Error("That is more than is left to refund on this payment");
+    }
+
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) throw new Error("STRIPE_SECRET_KEY is not set on this deployment");
+    const stripe = new Stripe(key);
+    await stripe.refunds.create(
+      {
+        payment_intent: payment.paymentIntentId,
+        amount: args.amountCents,
+        metadata: { customOrderId: args.id, orderNumber: order.number, stage: args.stage },
+      },
+      { idempotencyKey: `refund-${args.id}-${args.stage}-${payment.refundedCents}-${args.amountCents}` },
+    );
+
+    const refundedCents = payment.refundedCents + args.amountCents;
+    await ctx.runMutation(internal.customOrders.recordRefund, {
+      id: args.id,
+      stage: args.stage,
+      refundedCents,
+      cancelOrder: args.cancelOrder,
+    });
+    return { refundedCents };
+  },
+});
