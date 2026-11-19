@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { returnDeductions } from "../schema";
 
 /**
  * Refunds an order from the dashboard, in full or in part, and says whether
@@ -20,6 +21,9 @@ export const refund = action({
     amountCents: v.number(),
     // Only meaningful when this refund finishes off the order.
     restock: v.boolean(),
+    // A return: the piece came back, and these were kept from the refund.
+    // The order closes even though the refund is not for the full amount.
+    returned: v.optional(returnDeductions),
   },
   handler: async (ctx, args): Promise<{ refundedCents: number; full: boolean }> => {
     await ctx.runQuery(internal.admin.emailTest.assertAdmin, {});
@@ -46,6 +50,16 @@ export const refund = action({
     if (args.amountCents > remaining) {
       throw new Error("That is more than is left to refund on this order");
     }
+    if (args.returned) {
+      const { returnShippingCents, feeCents } = args.returned;
+      const whole = (n: number) => Number.isInteger(n) && n >= 0;
+      if (!whole(returnShippingCents) || !whole(feeCents)) {
+        throw new Error("Return shipping and the restocking fee must be zero or more");
+      }
+      if (args.amountCents + returnShippingCents + feeCents !== remaining) {
+        throw new Error("The refund and the amounts kept back must add up to what was paid");
+      }
+    }
 
     const key = process.env.STRIPE_SECRET_KEY;
     if (!key) throw new Error("STRIPE_SECRET_KEY is not set on this deployment");
@@ -61,12 +75,13 @@ export const refund = action({
     );
 
     const refundedCents = order.refundedCents + args.amountCents;
-    const full = refundedCents >= order.totalCents;
+    const full = args.returned !== undefined || refundedCents >= order.totalCents;
     await ctx.runMutation(internal.orders.markRefunded, {
       stripePaymentIntentId: order.stripePaymentIntentId,
       amountRefundedCents: refundedCents,
       full,
       restock: args.restock,
+      deductions: args.returned,
     });
     return { refundedCents, full };
   },

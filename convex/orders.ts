@@ -12,7 +12,7 @@ import { computeShippingCents } from "./lib/shipping";
 import { adminEmails } from "./lib/adminEmails";
 import { SETTLED_STATUSES } from "./lib/pieceShape";
 import { ensureSettings, getSettings } from "./settings";
-import { shippingAddress, shippingMethod, shipTo } from "./schema";
+import { returnDeductions, shippingAddress, shippingMethod, shipTo } from "./schema";
 
 export { HOLD_MINUTES, HOLD_MS } from "./lib/hold";
 
@@ -340,6 +340,9 @@ export const markRefunded = internalMutation({
     // dashboard passes false when it should stay off the shop (it came back
     // damaged, or is not coming back at all).
     restock: v.optional(v.boolean()),
+    // A return: the piece came back and the refund is the total less these.
+    // Such a refund closes the order even though it is not for the full amount.
+    deductions: v.optional(returnDeductions),
   },
   handler: async (ctx, args) => {
     const order = await ctx.db
@@ -357,7 +360,12 @@ export const markRefunded = internalMutation({
 
     const refundedAt = Date.now();
     if (full && order.status !== "refunded") {
-      await setOrderStatus(ctx, order._id, "refunded", { refundedCents: total, refundedAt });
+      await setOrderStatus(ctx, order._id, "refunded", {
+        refundedCents: total,
+        refundedAt,
+        returnShippingCents: args.deductions?.returnShippingCents,
+        returnFeeCents: args.deductions?.feeCents,
+      });
       if (args.restock === false) await keepOffSale(ctx, order._id);
     } else {
       await ctx.db.patch("orders", order._id, { refundedCents: total, refundedAt });
@@ -367,6 +375,7 @@ export const markRefunded = internalMutation({
         orderId: order._id,
         amountCents: total - already,
         full,
+        deductions: args.deductions,
       });
     }
     return null;

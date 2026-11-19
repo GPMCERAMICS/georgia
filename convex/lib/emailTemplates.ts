@@ -477,26 +477,75 @@ export function orderDelivered(order: OrderData): Email {
 
 // ---------- 7. Refund ----------
 
-export function orderRefunded(order: OrderData, refund: { amountCents: number; full: boolean }): Email {
+export type RefundData = {
+  amountCents: number;
+  /** True when this refund closes the order. */
+  full: boolean;
+  /** Present for a return: what was kept back from the refund. */
+  deductions?: { returnShippingCents: number; feeCents: number };
+};
+
+export function orderRefunded(order: OrderData, refund: RefundData): Email {
   const amount = money(refund.amountCents);
-  const lead = refund.full
-    ? `I have refunded order ${order.orderNumber} in full: ${amount}.`
-    : `I have refunded ${amount} of order ${order.orderNumber}.`;
+  const kept = refund.deductions
+    ? refund.deductions.returnShippingCents + refund.deductions.feeCents
+    : 0;
+  const isReturn = refund.deductions !== undefined;
+
+  const lead = isReturn
+    ? `Your return for order ${order.orderNumber} has arrived, and I have refunded ${amount}.`
+    : refund.full
+      ? `I have refunded order ${order.orderNumber} in full: ${amount}.`
+      : `I have refunded ${amount} of order ${order.orderNumber}.`;
+
+  // A return shows its working: what was paid, what was kept back and why.
+  const lines: [string, string][] = isReturn
+    ? [
+        ["Order total", money(refund.amountCents + kept)],
+        ...(refund.deductions!.returnShippingCents > 0
+          ? ([["Return shipping", `-${money(refund.deductions!.returnShippingCents)}`]] as [string, string][])
+          : []),
+        ...(refund.deductions!.feeCents > 0
+          ? ([["Restocking fee", `-${money(refund.deductions!.feeCents)}`]] as [string, string][])
+          : []),
+        ["Refunded to you", amount],
+      ]
+    : [];
+  const breakdownHtml = lines
+    .map(
+      ([label, value], i) =>
+        `<tr><td style="padding:3px 0;font-family:${SANS};font-size:15px;color:${INK};${i === lines.length - 1 ? "font-weight:600;padding-top:8px;" : ""}">${esc(label)}</td><td align="right" style="padding:3px 0;font-family:${SANS};font-size:15px;color:${INK};white-space:nowrap;${i === lines.length - 1 ? "font-weight:600;padding-top:8px;" : ""}">${esc(value).replace("-", "&minus;")}</td></tr>`,
+    )
+    .join("");
+
   const body = [
-    heading(refund.full ? "Your order has been refunded" : "A refund is on its way"),
+    heading(
+      isReturn
+        ? "Your return has been refunded"
+        : refund.full
+          ? "Your order has been refunded"
+          : "A refund is on its way",
+    ),
     p(`Hi ${esc(firstName(order.name))},`),
     p(esc(lead)),
-    panel("Refund", `<strong>${amount}</strong> to your original payment method`),
-    p(`Refunds usually appear on your statement within 5 to 10 business days, depending on your bank.`),
+    isReturn
+      ? panel(
+          "Refund",
+          `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${breakdownHtml}</table>`,
+        )
+      : panel("Refund", `<strong>${amount}</strong> to your original payment method`),
+    p(`${isReturn ? "The refund goes to your original payment method. " : ""}Refunds usually appear on your statement within 5 to 10 business days, depending on your bank.`),
     subheading(`Order ${order.orderNumber}`),
     orderTable(order, false),
     p(`If you have any questions, just reply to this email.`),
     signOff,
   ].join("\n");
   return {
-    subject: refund.full
-      ? `Order ${order.orderNumber} has been refunded`
-      : `A ${amount} refund for order ${order.orderNumber}`,
+    subject: isReturn
+      ? `Your return for order ${order.orderNumber} has been refunded`
+      : refund.full
+        ? `Order ${order.orderNumber} has been refunded`
+        : `A ${amount} refund for order ${order.orderNumber}`,
     html: layout({
       siteUrl: order.siteUrl,
       preheader: `${amount} is going back to your original payment method.`,
@@ -507,6 +556,8 @@ export function orderRefunded(order: OrderData, refund: { amountCents: number; f
       `Hi ${firstName(order.name)},`,
       "",
       lead,
+      ...(isReturn ? ["", ...lines.map(([label, value]) => `${label}: ${value}`)] : []),
+      "",
       "The refund goes to your original payment method and usually appears within 5 to 10 business days, depending on your bank.",
       "",
       itemsText(order.items),

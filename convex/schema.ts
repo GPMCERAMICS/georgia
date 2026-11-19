@@ -65,6 +65,12 @@ export const shipTo = v.object({
   postalCode: v.string(),
 });
 
+/** What a return keeps back from the refund. */
+export const returnDeductions = v.object({
+  returnShippingCents: v.number(),
+  feeCents: v.number(),
+});
+
 export const shippingAddress = v.object({
   line1: v.string(),
   line2: v.union(v.string(), v.null()),
@@ -175,6 +181,10 @@ export default defineSchema({
     refundedCents: v.optional(v.number()),
     // When the most recent refund was recorded.
     refundedAt: v.optional(v.number()),
+    // Set when the order ended as a return: what was kept back from the
+    // refund for the return label and as a restocking fee.
+    returnShippingCents: v.optional(v.number()),
+    returnFeeCents: v.optional(v.number()),
     // The shopper ticked "send me news" in the cart. Acted on once paid.
     newsletterOptIn: v.optional(v.boolean()),
     // Set when an abandoned-checkout reminder has been queued for this order,

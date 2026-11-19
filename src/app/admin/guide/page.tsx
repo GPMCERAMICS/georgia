@@ -157,6 +157,16 @@ const sections: Section[] = [
         ],
       },
       {
+        kind: "steps",
+        title: "When a piece is sent back",
+        items: [
+          <>Wait until the piece has arrived and you have checked it.</>,
+          <>Open the order, choose {b("Refund this order")}, then {b("Return")}.</>,
+          <>Enter the {b("return shipping")} cost if you paid for the label, and the {b("restocking fee")}. The panel shows what the customer gets back.</>,
+          <>Choose whether the piece goes back on sale, then {b("Refund")}. The order closes, and the customer&apos;s email lists the order total, each amount kept back, and the refund.</>,
+        ],
+      },
+      {
         kind: "note",
         text: "A refund cannot be undone, and Stripe keeps its processing fee. Damage claims and address problems are handled by replying to the buyer directly.",
       },

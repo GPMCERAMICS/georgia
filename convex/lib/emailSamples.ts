@@ -180,6 +180,18 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       email: templates.orderRefunded(base, { amountCents: 4000, full: false }),
     },
     {
+      id: "refund-return",
+      label: "Refund — return",
+      trigger: "A returned piece is refunded from the dashboard, less return shipping and the restocking fee.",
+      audience: "Customer, with a copy to the owner",
+      isNew: true,
+      email: templates.orderRefunded(base, {
+        amountCents: 16425,
+        full: true,
+        deductions: { returnShippingCents: 1000, feeCents: 3075 },
+      }),
+    },
+    {
       id: "reminder-1",
       label: "Checkout reminder — first",
       trigger: "One hour after a checkout is abandoned, if the piece is still for sale.",

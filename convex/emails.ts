@@ -7,6 +7,7 @@ import { adminEmails } from "./lib/adminEmails";
 import * as templates from "./lib/emailTemplates";
 import type { Email, InquiryData, OrderData } from "./lib/emailTemplates";
 import { itemsForOrder } from "./orders";
+import { returnDeductions } from "./schema";
 import { getSettings } from "./settings";
 
 /**
@@ -292,7 +293,12 @@ export const orderUpdate = internalAction({
 });
 
 export const orderRefunded = internalAction({
-  args: { orderId: v.id("orders"), amountCents: v.number(), full: v.boolean() },
+  args: {
+    orderId: v.id("orders"),
+    amountCents: v.number(),
+    full: v.boolean(),
+    deductions: v.optional(returnDeductions),
+  },
   handler: async (ctx, args) => {
     const context = await ctx.runQuery(internal.emails.orderContext, { orderId: args.orderId });
     if (!context || !context.order.email) return null;
@@ -301,7 +307,11 @@ export const orderRefunded = internalAction({
       ctx,
       args.orderId,
       "refunded",
-      templates.orderRefunded(order, { amountCents: args.amountCents, full: args.full }),
+      templates.orderRefunded(order, {
+        amountCents: args.amountCents,
+        full: args.full,
+        deductions: args.deductions,
+      }),
       { to: [context.order.email], copyOwners: context.owners },
     );
     return null;

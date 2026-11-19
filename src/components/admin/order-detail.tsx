@@ -182,6 +182,18 @@ export function OrderDetail({ id }: { id: string }) {
                   <dd>-{money(order.refundedCents ?? 0)}</dd>
                 </div>
               )}
+              {(order.returnShippingCents ?? 0) > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <dt>Kept for return shipping</dt>
+                  <dd>{money(order.returnShippingCents ?? 0)}</dd>
+                </div>
+              )}
+              {(order.returnFeeCents ?? 0) > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <dt>Kept as restocking fee</dt>
+                  <dd>{money(order.returnFeeCents ?? 0)}</dd>
+                </div>
+              )}
             </dl>
           </section>
 
@@ -442,7 +454,9 @@ function OrderActivity({
     order.status === "cancelled"
       ? "Cancelled"
       : order.status === "refunded"
-        ? "Refunded in full"
+        ? (order.refundedCents ?? 0) < order.totalCents
+          ? `Returned: refunded ${money(order.refundedCents ?? 0)} of ${money(order.totalCents)}`
+          : "Refunded in full"
         : `Refunded ${money(order.refundedCents ?? 0)} of ${money(order.totalCents)}`,
   );
 
@@ -505,10 +519,16 @@ const activityTime = (ms: number) =>
   }).format(new Date(ms));
 
 
+/** "12.50" → 1250. Blank counts as zero; anything unreadable is NaN. */
+const toCents = (text: string) => (text.trim() === "" ? 0 : Math.round(Number(text) * 100));
+
 /**
- * Refund the customer without leaving the dashboard. A partial refund leaves
- * the order open; refunding everything that is left closes it, and that is
- * the moment to say whether the pieces go back on the shop.
+ * Refund the customer without leaving the dashboard.
+ *
+ * Two kinds. A plain refund sends back an amount: all of it closes the
+ * order, less leaves it open. A return is for a piece that has come back:
+ * the refund is what was paid less return shipping and a restocking fee,
+ * the order closes, and the email shows the customer the sum.
  */
 function RefundPanel({
   order,
@@ -525,14 +545,38 @@ function RefundPanel({
   const remainingCents = order.totalCents - (order.refundedCents ?? 0);
   const uncharged = order.stripePaymentIntentId === null || order.totalCents === 0;
   const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<"refund" | "return">("refund");
   const [amount, setAmount] = useState<string | null>(null);
+  const [returnShipping, setReturnShipping] = useState("");
+  const [fee, setFee] = useState("");
   const [restock, setRestock] = useState(true);
 
+  const isReturn = kind === "return" && !uncharged;
+  const returnShippingCents = toCents(returnShipping);
+  const feeCents = toCents(fee);
   const amountText = amount ?? (remainingCents / 100).toFixed(2);
-  const amountCents = Math.round(Number(amountText) * 100);
-  const valid = uncharged || (Number.isFinite(amountCents) && amountCents > 0 && amountCents <= remainingCents);
-  const closesOrder = uncharged || amountCents === remainingCents;
-  const pieces = order.items.length === 1 ? "the piece" : "the pieces";
+  const amountCents = isReturn
+    ? remainingCents - returnShippingCents - feeCents
+    : Math.round(Number(amountText) * 100);
+  const valid =
+    uncharged ||
+    (Number.isFinite(amountCents) &&
+      amountCents > 0 &&
+      amountCents <= remainingCents &&
+      (!isReturn || (returnShippingCents >= 0 && feeCents >= 0)));
+  const closesOrder = uncharged || isReturn || amountCents === remainingCents;
+  const one = order.items.length === 1;
+  const pieces = one ? "the piece" : "the pieces";
+  const Pieces = one ? "The piece" : "The pieces";
+
+  function reset() {
+    setOpen(false);
+    setKind("refund");
+    setAmount(null);
+    setReturnShipping("");
+    setFee("");
+    setRestock(true);
+  }
 
   async function submit() {
     try {
@@ -540,16 +584,18 @@ function RefundPanel({
         id: order._id,
         amountCents: uncharged ? 0 : amountCents,
         restock: closesOrder ? restock : true,
+        returned: isReturn ? { returnShippingCents, feeCents } : undefined,
       });
       toast.success(
         uncharged
           ? "Order cancelled"
-          : result.full
-            ? "Refunded in full — customer emailed"
-            : `Refunded ${money(amountCents)} — customer emailed`,
+          : isReturn
+            ? `Return refunded: ${money(amountCents)} — customer emailed`
+            : result.full
+              ? "Refunded in full — customer emailed"
+              : `Refunded ${money(amountCents)} — customer emailed`,
       );
-      setOpen(false);
-      setAmount(null);
+      reset();
     } catch (error) {
       toast.error(errorMessage(error, "The refund did not go through"));
       // Rethrow so the confirm dialog stays open on a failure.
@@ -560,7 +606,7 @@ function RefundPanel({
   if (!open) {
     return (
       <section className="border border-border bg-card p-5">
-        <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund"}</h2>
+        <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund or return"}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {uncharged
             ? "Nothing was charged for this order, so there is no payment to refund. Cancelling it ends the order."
@@ -573,10 +619,36 @@ function RefundPanel({
     );
   }
 
+  const choice = (value: "refund" | "return", title: string, hint: string) => (
+    <label
+      className={`flex cursor-pointer items-start gap-3 border p-3 ${kind === value ? "border-primary bg-primary/5" : "border-border"}`}
+    >
+      <input
+        type="radio"
+        name="refundKind"
+        className="mt-1"
+        checked={kind === value}
+        onChange={() => setKind(value)}
+      />
+      <span>
+        <span className="block text-sm font-medium">{title}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
+      </span>
+    </label>
+  );
+
   return (
     <section className="border border-destructive/40 bg-card p-5">
-      <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund"}</h2>
+      <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund or return"}</h2>
+
       {!uncharged && (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {choice("refund", "Refund", "Send money back. The customer keeps the order unless you refund all of it.")}
+          {choice("return", "Return", `${Pieces} came back. Refund what was paid, less return shipping and a restocking fee.`)}
+        </div>
+      )}
+
+      {!uncharged && !isReturn && (
         <div className="mt-4 grid max-w-xs gap-1.5">
           <Label htmlFor="refundAmount">Amount to refund (USD)</Label>
           <Input
@@ -595,6 +667,63 @@ function RefundPanel({
         </div>
       )}
 
+      {isReturn && (
+        <div className="mt-4 grid gap-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="returnShipping">Return shipping (USD)</Label>
+              <Input
+                id="returnShipping"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={returnShipping}
+                onChange={(e) => setReturnShipping(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                The cost of the label, if you sent them one. Leave blank if they paid for it.
+              </p>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="returnFee">Restocking fee (USD)</Label>
+              <Input
+                id="returnFee"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+              />
+            </div>
+          </div>
+          <dl className="max-w-sm space-y-1 border-t border-border pt-3 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Paid</dt>
+              <dd>{money(remainingCents)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Return shipping</dt>
+              <dd>-{money(Number.isFinite(returnShippingCents) ? returnShippingCents : 0)}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Restocking fee</dt>
+              <dd>-{money(Number.isFinite(feeCents) ? feeCents : 0)}</dd>
+            </div>
+            <div className="flex justify-between pt-1 font-display text-lg">
+              <dt>Customer gets back</dt>
+              <dd>{valid ? money(amountCents) : "—"}</dd>
+            </div>
+          </dl>
+          {!valid && (
+            <p role="alert" className="text-sm text-destructive">
+              The amounts kept back must come to less than what was paid.
+            </p>
+          )}
+        </div>
+      )}
+
       {closesOrder ? (
         <label className="mt-4 flex items-start gap-2.5 text-sm">
           <input
@@ -606,8 +735,8 @@ function RefundPanel({
           <span>
             Put {pieces} back on sale
             <span className="block text-xs text-muted-foreground">
-              Untick if {order.items.length === 1 ? "it is" : "they are"} damaged or not coming
-              back. {order.items.length === 1 ? "It" : "They"} will show as sold instead.
+              Untick if {one ? "it is" : "they are"} damaged or not coming back.{" "}
+              {one ? "It" : "They"} will show as sold instead.
             </span>
           </span>
         </label>
@@ -627,12 +756,10 @@ function RefundPanel({
           }
           description={
             uncharged
-              ? `This ends the order. ${restock ? `${pieces[0].toUpperCase()}${pieces.slice(1)} will go back on sale.` : `${pieces[0].toUpperCase()}${pieces.slice(1)} will stay off the shop.`}`
-              : `The money goes back to their original payment method and they are emailed. This cannot be undone. ${
+              ? `This ends the order. ${Pieces} will ${restock ? "go back on sale" : "stay off the shop"}.`
+              : `The money goes back to their original payment method and they are emailed${isReturn ? " a breakdown of what was kept back" : ""}. This cannot be undone. ${
                   closesOrder
-                    ? restock
-                      ? `The order closes and ${pieces} will go back on sale.`
-                      : `The order closes and ${pieces} will stay off the shop.`
+                    ? `The order closes and ${pieces} will ${restock ? "go back on sale" : "stay off the shop"}.`
                     : "The order stays open."
                 }`
           }
@@ -641,13 +768,7 @@ function RefundPanel({
         >
           {uncharged ? "Cancel order" : `Refund ${valid ? money(amountCents) : ""}`}
         </ConfirmDialog>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setOpen(false);
-            setAmount(null);
-          }}
-        >
+        <Button variant="outline" onClick={reset}>
           Never mind
         </Button>
       </div>

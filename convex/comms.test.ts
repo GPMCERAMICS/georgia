@@ -272,7 +272,7 @@ describe("email templates", () => {
   const samples = sampleEmails("https://example.test");
 
   test("every email has a subject, an HTML version and a plain-text version", () => {
-    expect(samples.length).toBeGreaterThanOrEqual(17);
+    expect(samples.length).toBeGreaterThanOrEqual(18);
     for (const sample of samples) {
       expect(sample.email.subject.length, sample.id).toBeGreaterThan(5);
       expect(sample.email.html, sample.id).toContain("</html>");
@@ -528,6 +528,51 @@ describe("refunding from the dashboard: back on sale, or not", () => {
     expect(await stateOf(t)).toBe("sold");
     expect((await t.run(async (ctx) => ctx.db.get("orders", orderId)))?.status).toBe("paid");
     vi.useRealTimers();
+  });
+
+  test("a return refunds what was paid less the amounts kept back, and closes the order", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const { orderId } = await soldPiece(t);
+    const deductions = { returnShippingCents: 1200, feeCents: 2700 };
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_back",
+      amountRefundedCents: 14100,
+      full: true,
+      restock: true,
+      deductions,
+    });
+    // Stripe's webhook for the same refund reports a partial refund; it must
+    // neither reopen the order nor email the customer a second time.
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_back",
+      amountRefundedCents: 14100,
+      full: false,
+    });
+
+    const order = await t.run(async (ctx) => ctx.db.get("orders", orderId));
+    expect(order).toMatchObject({
+      status: "refunded",
+      refundedCents: 14100,
+      returnShippingCents: 1200,
+      returnFeeCents: 2700,
+    });
+    expect(await stateOf(t)).toBe("available");
+    const jobs = (await t.run(async (ctx) => ctx.db.system.query("_scheduled_functions").collect())).filter(
+      (job) => job.name.includes("orderRefunded"),
+    );
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0].args[0]).toMatchObject({ amountCents: 14100, full: true, deductions });
+    vi.useRealTimers();
+  });
+
+  test("the return email shows the sum: total, what was kept back, what was refunded", () => {
+    const email = sampleEmails("https://example.test").find((sample) => sample.id === "refund-return")!.email;
+    expect(email.subject).toContain("return");
+    for (const text of ["Order total", "Return shipping", "Restocking fee", "Refunded to you", "$205.00", "$164.25"]) {
+      expect(email.html, text).toContain(text);
+      expect(email.text, text).toContain(text);
+    }
   });
 
   test("an order a promo code paid for in full can be cancelled and restocked", async () => {
