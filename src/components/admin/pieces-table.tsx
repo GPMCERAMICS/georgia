@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { modeLabel, money, pieceStatusMeta } from "@/lib/admin";
 import { placeholderShape } from "@/lib/shop";
+import { useSettled } from "@/lib/use-settled";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "./admin-shell";
 
@@ -41,7 +42,10 @@ function AvailabilityBadge({ piece }: { piece: AdminPiece }) {
 
 export function PiecesTable() {
   const now = useCatalogNow();
-  const pieces = useQuery(api.admin.pieces.list, now === null ? "skip" : { now });
+  // Kept on screen while the minute tick reloads it, so the list does not flash.
+  const pieces = useSettled(
+    useQuery(api.admin.pieces.list, now === null ? "skip" : { now }),
+  );
   const tags = useQuery(api.admin.tags.list);
   const setStatus = useMutation(api.admin.pieces.setStatus);
   const reorder = useMutation(api.admin.pieces.reorder);

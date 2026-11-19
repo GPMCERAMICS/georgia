@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { pieceStatusMeta } from "@/lib/admin";
 import { slugify } from "@/lib/slug";
+import { useSettled } from "@/lib/use-settled";
 
 type Mode = AdminPiece["mode"];
 type ShippingTier = AdminPiece["shippingTier"];
@@ -35,14 +36,21 @@ function errorMessage(error: unknown, fallback: string) {
 /**
  * Create and edit share one form. Given an `id` the piece is loaded first so
  * the inner form mounts once with settled initial state.
+ *
+ * "Once" matters: the query takes the current minute, so it reloads every
+ * minute. If the form were swapped for a loading state each time, it would
+ * remount with the saved values and wipe out whatever was being typed.
+ * `useSettled` keeps the loaded piece on screen through those reloads.
  */
 export function PieceForm({ id }: { id?: string }) {
   const now = useCatalogNow();
-  const piece = useQuery(
-    api.admin.pieces.get,
-    id && now !== null ? { id: id as Id<"pieces">, now } : "skip",
+  const piece = useSettled(
+    useQuery(
+      api.admin.pieces.get,
+      id && now !== null ? { id: id as Id<"pieces">, now } : "skip",
+    ),
   );
-  const tags = useQuery(api.admin.tags.list);
+  const tags = useSettled(useQuery(api.admin.tags.list));
 
   if (tags === undefined || (id && piece === undefined)) {
     return (

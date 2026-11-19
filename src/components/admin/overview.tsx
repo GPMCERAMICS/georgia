@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useSettled } from "@/lib/use-settled";
 import { money, orderStatusFor, shortDate, startOfMonth } from "@/lib/admin";
 import { PageHeader } from "./admin-shell";
 
@@ -39,9 +40,11 @@ function Stat({
 
 export function Overview() {
   const now = useCatalogNow();
-  const stats = useQuery(
-    api.admin.dashboard.stats,
-    now === null ? "skip" : { now, monthStart: startOfMonth(now) },
+  const stats = useSettled(
+    useQuery(
+      api.admin.dashboard.stats,
+      now === null ? "skip" : { now, monthStart: startOfMonth(now) },
+    ),
   );
 
   const monthLabel =

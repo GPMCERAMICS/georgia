@@ -217,6 +217,59 @@ describe("admin.pieces.update", () => {
   });
 });
 
+describe("admin.pieces.update: every field can be edited", () => {
+  test("a published piece saved exactly as the edit form sends it", async () => {
+    process.env.ADMIN_EMAIL = ADMIN.email;
+    const t = convexTest(schema, modules);
+    const admin = await asAdmin(t);
+    const id = await admin.mutation(api.admin.pieces.create, { ...newPieceArgs, publish: true });
+
+    // The form always sends every field, including the unchanged slug.
+    const edited = {
+      title: "Kingfisher Plate, second firing",
+      slug: "kingfisher-plate",
+      description: "A new first paragraph.\n\nAnd a second one, added later.",
+      size: '9" plate',
+      tags: ["plates", "wildlife"],
+      mode: "madeToOrder" as const,
+      priceCents: 9550,
+      stock: null,
+      leadTimeWeeks: 3,
+      shippingTier: "platter" as const,
+      dimensions: { widthIn: 9.25, heightIn: 9.25, depthIn: 1.5 },
+      weightOz: 28.8,
+      foodSafe: false,
+      dishwasherSafe: true,
+      careNotes: "Hand wash only.",
+    };
+    await admin.mutation(api.admin.pieces.update, { id, ...edited });
+
+    const piece = await t.run(async (ctx) => ctx.db.get("pieces", id));
+    expect(piece).toMatchObject(edited);
+    // Editing never changes whether it is on the shop.
+    expect(piece?.status).toBe("published");
+
+    // And it can be edited again, clearing the optional fields.
+    await admin.mutation(api.admin.pieces.update, {
+      id,
+      ...edited,
+      description: "Rewritten once more.",
+      size: null,
+      dimensions: null,
+      weightOz: null,
+      careNotes: null,
+    });
+    const again = await t.run(async (ctx) => ctx.db.get("pieces", id));
+    expect(again).toMatchObject({
+      description: "Rewritten once more.",
+      size: null,
+      dimensions: null,
+      weightOz: null,
+      careNotes: null,
+    });
+  });
+});
+
 describe("admin.pieces.markSold", () => {
   test("a manually sold piece disappears from the public list", async () => {
     process.env.ADMIN_EMAIL = ADMIN.email;
