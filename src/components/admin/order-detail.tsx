@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useAction, useMutation, useQuery } from "convex/react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
@@ -291,6 +291,10 @@ export function OrderDetail({ id }: { id: string }) {
             </section>
           )}
 
+          {(order.status === "paid" || order.status === "shipped" || order.status === "delivered") && (
+            <RefundPanel order={order} />
+          )}
+
           <section className="rounded-2xl border border-border bg-card p-5">
             <h2 className="font-display text-xl">Notes</h2>
             <Textarea
@@ -435,9 +439,11 @@ function OrderActivity({
   step(
     order.refundedAt,
     "refunded",
-    order.status === "refunded"
-      ? "Refunded in full"
-      : `Refunded ${money(order.refundedCents ?? 0)} of ${money(order.totalCents)}`,
+    order.status === "cancelled"
+      ? "Cancelled"
+      : order.status === "refunded"
+        ? "Refunded in full"
+        : `Refunded ${money(order.refundedCents ?? 0)} of ${money(order.totalCents)}`,
   );
 
   for (const email of emails ?? []) {
@@ -497,3 +503,154 @@ const activityTime = (ms: number) =>
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(ms));
+
+
+/**
+ * Refund the customer without leaving the dashboard. A partial refund leaves
+ * the order open; refunding everything that is left closes it, and that is
+ * the moment to say whether the pieces go back on the shop.
+ */
+function RefundPanel({
+  order,
+}: {
+  order: {
+    _id: Id<"orders">;
+    totalCents: number;
+    refundedCents?: number;
+    stripePaymentIntentId: string | null;
+    items: { title: string }[];
+  };
+}) {
+  const refund = useAction(api.admin.refunds.refund);
+  const remainingCents = order.totalCents - (order.refundedCents ?? 0);
+  const uncharged = order.stripePaymentIntentId === null || order.totalCents === 0;
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState<string | null>(null);
+  const [restock, setRestock] = useState(true);
+
+  const amountText = amount ?? (remainingCents / 100).toFixed(2);
+  const amountCents = Math.round(Number(amountText) * 100);
+  const valid = uncharged || (Number.isFinite(amountCents) && amountCents > 0 && amountCents <= remainingCents);
+  const closesOrder = uncharged || amountCents === remainingCents;
+  const pieces = order.items.length === 1 ? "the piece" : "the pieces";
+
+  async function submit() {
+    try {
+      const result = await refund({
+        id: order._id,
+        amountCents: uncharged ? 0 : amountCents,
+        restock: closesOrder ? restock : true,
+      });
+      toast.success(
+        uncharged
+          ? "Order cancelled"
+          : result.full
+            ? "Refunded in full — customer emailed"
+            : `Refunded ${money(amountCents)} — customer emailed`,
+      );
+      setOpen(false);
+      setAmount(null);
+    } catch (error) {
+      toast.error(errorMessage(error, "The refund did not go through"));
+      // Rethrow so the confirm dialog stays open on a failure.
+      throw error;
+    }
+  }
+
+  if (!open) {
+    return (
+      <section className="border border-border bg-card p-5">
+        <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund"}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {uncharged
+            ? "Nothing was charged for this order, so there is no payment to refund. Cancelling it ends the order."
+            : `${money(remainingCents)} can be refunded to the customer's original payment method.`}
+        </p>
+        <Button variant="outline" className="mt-4" onClick={() => setOpen(true)}>
+          {uncharged ? "Cancel this order…" : "Refund this order…"}
+        </Button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="border border-destructive/40 bg-card p-5">
+      <h2 className="font-display text-xl">{uncharged ? "Cancel order" : "Refund"}</h2>
+      {!uncharged && (
+        <div className="mt-4 grid max-w-xs gap-1.5">
+          <Label htmlFor="refundAmount">Amount to refund (USD)</Label>
+          <Input
+            id="refundAmount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            max={(remainingCents / 100).toFixed(2)}
+            value={amountText}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Up to {money(remainingCents)}. Less than that is a partial refund and leaves the order
+            open.
+          </p>
+        </div>
+      )}
+
+      {closesOrder ? (
+        <label className="mt-4 flex items-start gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 size-4 accent-primary"
+            checked={restock}
+            onChange={(e) => setRestock(e.target.checked)}
+          />
+          <span>
+            Put {pieces} back on sale
+            <span className="block text-xs text-muted-foreground">
+              Untick if {order.items.length === 1 ? "it is" : "they are"} damaged or not coming
+              back. {order.items.length === 1 ? "It" : "They"} will show as sold instead.
+            </span>
+          </span>
+        </label>
+      ) : (
+        <p className="mt-4 text-sm text-muted-foreground">
+          A partial refund does not change what is for sale. The customer keeps {pieces}.
+        </p>
+      )}
+
+      <div className="mt-5 flex flex-wrap gap-3">
+        <ConfirmDialog
+          trigger={<Button variant="destructive" disabled={!valid} />}
+          title={
+            uncharged
+              ? "Cancel this order?"
+              : `Refund ${money(valid ? amountCents : 0)} to the customer?`
+          }
+          description={
+            uncharged
+              ? `This ends the order. ${restock ? `${pieces[0].toUpperCase()}${pieces.slice(1)} will go back on sale.` : `${pieces[0].toUpperCase()}${pieces.slice(1)} will stay off the shop.`}`
+              : `The money goes back to their original payment method and they are emailed. This cannot be undone. ${
+                  closesOrder
+                    ? restock
+                      ? `The order closes and ${pieces} will go back on sale.`
+                      : `The order closes and ${pieces} will stay off the shop.`
+                    : "The order stays open."
+                }`
+          }
+          confirmLabel={uncharged ? "Cancel order" : "Refund"}
+          onConfirm={submit}
+        >
+          {uncharged ? "Cancel order" : `Refund ${valid ? money(amountCents) : ""}`}
+        </ConfirmDialog>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setOpen(false);
+            setAmount(null);
+          }}
+        >
+          Never mind
+        </Button>
+      </div>
+    </section>
+  );
+}

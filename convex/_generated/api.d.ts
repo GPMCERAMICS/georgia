@@ -15,6 +15,7 @@ import type * as admin_inquiries from "../admin/inquiries.js";
 import type * as admin_maintenance from "../admin/maintenance.js";
 import type * as admin_orders from "../admin/orders.js";
 import type * as admin_pieces from "../admin/pieces.js";
+import type * as admin_refunds from "../admin/refunds.js";
 import type * as admin_seed from "../admin/seed.js";
 import type * as admin_settings from "../admin/settings.js";
 import type * as admin_subscribers from "../admin/subscribers.js";
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   "admin/maintenance": typeof admin_maintenance;
   "admin/orders": typeof admin_orders;
   "admin/pieces": typeof admin_pieces;
+  "admin/refunds": typeof admin_refunds;
   "admin/seed": typeof admin_seed;
   "admin/settings": typeof admin_settings;
   "admin/subscribers": typeof admin_subscribers;

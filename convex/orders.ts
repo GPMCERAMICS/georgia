@@ -336,6 +336,10 @@ export const markRefunded = internalMutation({
     // Omitted by older callers, which only ever reported full refunds.
     amountRefundedCents: v.optional(v.number()),
     full: v.optional(v.boolean()),
+    // A full refund normally puts a one-of-a-kind piece back on sale. The
+    // dashboard passes false when it should stay off the shop (it came back
+    // damaged, or is not coming back at all).
+    restock: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const order = await ctx.db
@@ -354,6 +358,7 @@ export const markRefunded = internalMutation({
     const refundedAt = Date.now();
     if (full && order.status !== "refunded") {
       await setOrderStatus(ctx, order._id, "refunded", { refundedCents: total, refundedAt });
+      if (args.restock === false) await keepOffSale(ctx, order._id);
     } else {
       await ctx.db.patch("orders", order._id, { refundedCents: total, refundedAt });
     }
@@ -364,6 +369,60 @@ export const markRefunded = internalMutation({
         full,
       });
     }
+    return null;
+  },
+});
+
+/**
+ * Stops a refunded or cancelled order's pieces going back on sale. Ending
+ * the order frees its claim on each piece; taking one off the piece's stock
+ * cancels that out, so a one-of-a-kind piece reads as sold. Made-to-order
+ * pieces have no stock and are unaffected.
+ */
+async function keepOffSale(ctx: MutationCtx, orderId: Id<"orders">) {
+  const lines = await itemsForOrder(ctx, orderId);
+  for (const line of lines) {
+    const piece = await ctx.db.get("pieces", line.pieceId);
+    if (piece && piece.stock !== null) {
+      await ctx.db.patch("pieces", piece._id, { stock: Math.max(0, piece.stock - 1) });
+    }
+  }
+}
+
+/** What the dashboard's refund action needs to know before it calls Stripe. */
+export const refundContext = internalQuery({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("orders", args.orderId);
+    if (!order) return null;
+    return {
+      status: order.status,
+      orderNumber: order.orderNumber,
+      totalCents: order.totalCents,
+      refundedCents: order.refundedCents ?? 0,
+      stripePaymentIntentId: order.stripePaymentIntentId,
+    };
+  },
+});
+
+/**
+ * Ends an order that was never charged (a promo code covered all of it), so
+ * there is no payment to refund. The pieces go back on sale unless asked not
+ * to.
+ */
+export const cancelUncharged = internalMutation({
+  args: { orderId: v.id("orders"), restock: v.boolean() },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get("orders", args.orderId);
+    if (!order) throw new Error("Order not found");
+    if (!SETTLED_STATUSES.has(order.status)) {
+      throw new Error("Only a paid order can be cancelled this way");
+    }
+    if (order.stripePaymentIntentId !== null && order.totalCents > 0) {
+      throw new Error("This order was charged. Refund it instead.");
+    }
+    await setOrderStatus(ctx, order._id, "cancelled", { refundedAt: Date.now() });
+    if (!args.restock) await keepOffSale(ctx, order._id);
     return null;
   },
 });

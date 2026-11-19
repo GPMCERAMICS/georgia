@@ -142,14 +142,23 @@ const sections: Section[] = [
       {
         kind: "steps",
         items: [
-          <>Open the order and choose {b("View in Stripe")}.</>,
-          <>Refund the payment there, in full or in part.</>,
-          <>The order updates here on its own and the buyer is emailed the amount. A full refund marks the order Refunded and puts a one-of-a-kind piece back on sale; a partial refund is recorded on the order and leaves it open.</>,
+          <>Open the order and choose {b("Refund this order")}.</>,
+          <>The full amount is filled in. Lower it for a partial refund.</>,
+          <>For a full refund, {b("Put the piece back on sale")} is ticked. Untick it if the piece is damaged or is not coming back; it will show as sold instead.</>,
+          <>Choose {b("Refund")} and confirm. The money goes back to the buyer&apos;s original payment method and they are emailed the amount.</>,
+        ],
+      },
+      {
+        kind: "points",
+        items: [
+          <>A {b("full refund")} closes the order as Refunded. A {b("partial refund")} is recorded on the order and leaves it open, with the piece still sold.</>,
+          <>An order a promo code paid for entirely has nothing to refund. It shows {b("Cancel this order")} instead, with the same choice about putting the piece back on sale.</>,
+          <>Refunding in Stripe still works and updates the order here in the same way.</>,
         ],
       },
       {
         kind: "note",
-        text: "Stripe keeps its processing fee when you refund. Damage claims and address problems are handled by replying to the buyer directly.",
+        text: "A refund cannot be undone, and Stripe keeps its processing fee. Damage claims and address problems are handled by replying to the buyer directly.",
       },
     ],
   },

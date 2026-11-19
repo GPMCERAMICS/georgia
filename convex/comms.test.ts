@@ -456,3 +456,103 @@ describe("every order state change sends its email", () => {
     await expect(t.query(api.admin.orders.emails, { id })).rejects.toThrow("Not authorised");
   });
 });
+
+describe("refunding from the dashboard: back on sale, or not", () => {
+  async function soldPiece(t: T, charged = true) {
+    const pieceId = await t.run(async (ctx) => ctx.db.insert("pieces", pieceFields({ slug: "refund-me" })));
+    const reserved = await t.mutation(internal.orders.reserve, {
+      pieceIds: [pieceId],
+      shippingMethod: "ship",
+      shipTo,
+      email: "pat@example.com",
+    });
+    await t.mutation(internal.orders.attachSession, {
+      orderId: reserved.orderId,
+      stripeSessionId: "cs_back",
+    });
+    await t.mutation(internal.orders.markPaid, {
+      stripeSessionId: "cs_back",
+      stripePaymentIntentId: charged ? "pi_back" : null,
+      email: "pat@example.com",
+      name: "Pat Buyer",
+      shippingAddress: null,
+      shippingCents: 0,
+      taxCents: 0,
+      totalCents: charged ? 18000 : 0,
+    });
+    return { pieceId, orderId: reserved.orderId as Id<"orders"> };
+  }
+  const stateOf = async (t: T) =>
+    (await t.query(api.pieces.listPublished, { now: Date.now() }))[0].availability.state;
+
+  test("a full refund puts a one-of-a-kind piece back on sale by default", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    await soldPiece(t);
+    expect(await stateOf(t)).toBe("sold");
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_back",
+      amountRefundedCents: 18000,
+      full: true,
+      restock: true,
+    });
+    expect(await stateOf(t)).toBe("available");
+    vi.useRealTimers();
+  });
+
+  test("a full refund can keep the piece off the shop", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const { orderId } = await soldPiece(t);
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_back",
+      amountRefundedCents: 18000,
+      full: true,
+      restock: false,
+    });
+    expect(await stateOf(t)).toBe("sold");
+    expect((await t.run(async (ctx) => ctx.db.get("orders", orderId)))?.status).toBe("refunded");
+    vi.useRealTimers();
+  });
+
+  test("a partial refund leaves the piece sold and the order open", async () => {
+    vi.useFakeTimers();
+    const t = convexTest(schema, modules);
+    const { orderId } = await soldPiece(t);
+    await t.mutation(internal.orders.markRefunded, {
+      stripePaymentIntentId: "pi_back",
+      amountRefundedCents: 5000,
+      full: false,
+      restock: true,
+    });
+    expect(await stateOf(t)).toBe("sold");
+    expect((await t.run(async (ctx) => ctx.db.get("orders", orderId)))?.status).toBe("paid");
+    vi.useRealTimers();
+  });
+
+  test("an order a promo code paid for in full can be cancelled and restocked", async () => {
+    const t = convexTest(schema, modules);
+    const { orderId } = await soldPiece(t, false);
+    expect(await stateOf(t)).toBe("sold");
+    await t.mutation(internal.orders.cancelUncharged, { orderId, restock: true });
+    expect(await stateOf(t)).toBe("available");
+    expect((await t.run(async (ctx) => ctx.db.get("orders", orderId)))?.status).toBe("cancelled");
+  });
+
+  test("a charged order cannot be cancelled without a refund", async () => {
+    const t = convexTest(schema, modules);
+    const { orderId } = await soldPiece(t);
+    await expect(
+      t.mutation(internal.orders.cancelUncharged, { orderId, restock: true }),
+    ).rejects.toThrow("Refund it instead");
+  });
+
+  test("the refund action is refused for anyone who is not an admin", async () => {
+    const t = convexTest(schema, modules);
+    process.env.ADMIN_EMAIL = "georgia@example.com";
+    const { orderId } = await soldPiece(t);
+    await expect(
+      t.action(api.admin.refunds.refund, { id: orderId, amountCents: 100, restock: true }),
+    ).rejects.toThrow("Not authorised");
+  });
+});
