@@ -9,6 +9,7 @@
  */
 
 import type * as admin_customers from "../admin/customers.js";
+import type * as admin_customOrders from "../admin/customOrders.js";
 import type * as admin_dashboard from "../admin/dashboard.js";
 import type * as admin_emailTest from "../admin/emailTest.js";
 import type * as admin_inquiries from "../admin/inquiries.js";
@@ -24,6 +25,8 @@ import type * as admin_uploads from "../admin/uploads.js";
 import type * as auth from "../auth.js";
 import type * as checkout from "../checkout.js";
 import type * as crons from "../crons.js";
+import type * as customCheckout from "../customCheckout.js";
+import type * as customOrders from "../customOrders.js";
 import type * as emails from "../emails.js";
 import type * as http from "../http.js";
 import type * as inquiries from "../inquiries.js";
@@ -33,6 +36,7 @@ import type * as lib_adminGuard from "../lib/adminGuard.js";
 import type * as lib_availability from "../lib/availability.js";
 import type * as lib_claims from "../lib/claims.js";
 import type * as lib_contacts from "../lib/contacts.js";
+import type * as lib_customOrder from "../lib/customOrder.js";
 import type * as lib_destination from "../lib/destination.js";
 import type * as lib_emailSamples from "../lib/emailSamples.js";
 import type * as lib_emailTemplates from "../lib/emailTemplates.js";
@@ -53,6 +57,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "admin/customers": typeof admin_customers;
+  "admin/customOrders": typeof admin_customOrders;
   "admin/dashboard": typeof admin_dashboard;
   "admin/emailTest": typeof admin_emailTest;
   "admin/inquiries": typeof admin_inquiries;
@@ -68,6 +73,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   checkout: typeof checkout;
   crons: typeof crons;
+  customCheckout: typeof customCheckout;
+  customOrders: typeof customOrders;
   emails: typeof emails;
   http: typeof http;
   inquiries: typeof inquiries;
@@ -77,6 +84,7 @@ declare const fullApi: ApiFromModules<{
   "lib/availability": typeof lib_availability;
   "lib/claims": typeof lib_claims;
   "lib/contacts": typeof lib_contacts;
+  "lib/customOrder": typeof lib_customOrder;
   "lib/destination": typeof lib_destination;
   "lib/emailSamples": typeof lib_emailSamples;
   "lib/emailTemplates": typeof lib_emailTemplates;

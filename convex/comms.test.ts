@@ -272,7 +272,7 @@ describe("email templates", () => {
   const samples = sampleEmails("https://example.test");
 
   test("every email has a subject, an HTML version and a plain-text version", () => {
-    expect(samples.length).toBeGreaterThanOrEqual(18);
+    expect(samples.length).toBeGreaterThanOrEqual(23);
     for (const sample of samples) {
       expect(sample.email.subject.length, sample.id).toBeGreaterThan(5);
       expect(sample.email.html, sample.id).toContain("</html>");

@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 
 type Address = {
   line1: string;
@@ -69,6 +70,26 @@ export const handleWebhook = internalAction({
           // Delayed payment methods are not enabled; nothing to do until paid.
           return { handled: "completed-unpaid" };
         }
+        const paymentIntentId =
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : (session.payment_intent?.id ?? null);
+
+        // A custom order's deposit or balance, paid from its invoice page.
+        const customOrderId = session.metadata?.customOrderId;
+        const stage = session.metadata?.customOrderStage;
+        if (customOrderId && (stage === "deposit" || stage === "balance")) {
+          await ctx.runMutation(internal.customOrders.markStagePaid, {
+            id: customOrderId as Id<"customOrders">,
+            stage,
+            paymentIntentId,
+            paidCents: session.amount_total ?? 0,
+            shippingAddress: shippingAddressOf(session),
+            notify: true,
+          });
+          return { handled: `custom-${stage}` };
+        }
+
         await ctx.runMutation(internal.orders.markPaid, {
           stripeSessionId: session.id,
           stripePaymentIntentId:

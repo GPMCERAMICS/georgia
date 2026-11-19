@@ -8,6 +8,7 @@ import { api } from "@convex/_generated/api";
 import { HOLD_MINUTES } from "@convex/lib/hold";
 import { Button } from "@/components/ui/button";
 import { availabilityLine, formatPrice } from "@/lib/shop";
+import { returnsPolicy } from "@/lib/site";
 import { useCart } from "./cart-provider";
 import { useCatalogNow } from "./use-catalog-now";
 
@@ -105,7 +106,13 @@ export function PiecePurchasePanel({
               {piece.mode === "madeToOrder"
                 ? "Made for you after you order. Every one is hand painted, so yours will be its own."
                 : "One of a kind. Once it sells, it's gone."}{" "}
-              Free shipping within the continental US.
+              Free shipping within the continental US.{" "}
+              {piece.mode === "madeToOrder"
+                ? "Made-to-order pieces can't be returned."
+                : `Returns within ${returnsPolicy.windowDays} days; a ${returnsPolicy.restockingPercent}% restocking fee applies.`}{" "}
+              <Link href="/returns" className="underline underline-offset-4 hover:no-underline">
+                Shipping &amp; Returns
+              </Link>
             </p>
           </>
         )}

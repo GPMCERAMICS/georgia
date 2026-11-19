@@ -7,7 +7,7 @@ export const isEmail = (value: string) =>
   value.length <= 200 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 /** An unguessable handle for unsubscribe links. */
-function newToken(): string {
+export function newToken(): string {
   let token = "";
   while (token.length < 40) token += Math.random().toString(36).slice(2);
   return token.slice(0, 40);

@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -122,6 +123,7 @@ function InquiryCard({ inquiry }: { inquiry: Inquiry }) {
           <Button asChild size="sm" variant="outline" className="rounded-full">
             <a href={`mailto:${inquiry.email}?subject=${encodeURIComponent("Your commission inquiry")}`}>Reply by email</a>
           </Button>
+          <StartCustomOrder inquiryId={inquiry._id} />
           <ConfirmDialog
             trigger={<Button size="sm" variant="ghost" className="rounded-full text-destructive" />}
             title="Delete this inquiry?"
@@ -198,5 +200,46 @@ export function InquiriesBoard() {
         </div>
       )}
     </div>
+  );
+}
+
+
+/**
+ * Turns an inquiry into a custom order: a draft invoice with the customer's
+ * details already filled in. Any already started from it are linked instead
+ * of being started twice by accident.
+ */
+function StartCustomOrder({ inquiryId }: { inquiryId: Id<"inquiries"> }) {
+  const router = useRouter();
+  const existing = useQuery(api.admin.customOrders.forInquiry, { inquiryId });
+  const create = useMutation(api.admin.customOrders.create);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <>
+      {existing?.map((order) => (
+        <Button key={order._id} asChild size="sm" variant="outline" className="rounded-full">
+          <Link href={`/admin/custom/${order._id}`}>Custom order {order.number}</Link>
+        </Button>
+      ))}
+      <Button
+        size="sm"
+        className="rounded-full"
+        variant={existing && existing.length > 0 ? "outline" : "default"}
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const id = await create({ inquiryId });
+            router.push(`/admin/custom/${id}`);
+          } catch {
+            toast.error("Could not start a custom order. Try again.");
+            setBusy(false);
+          }
+        }}
+      >
+        {existing && existing.length > 0 ? "Start another" : "Start custom order"}
+      </Button>
+    </>
   );
 }

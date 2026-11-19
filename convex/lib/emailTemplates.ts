@@ -204,7 +204,7 @@ ${body}
 </td></tr>
 <tr><td style="background:${BAND};padding:24px 24px 26px;">
 <p style="margin:0 0 10px;font-family:${SERIF};font-size:17px;color:${INK};">${esc(BRAND)}</p>
-<p style="margin:0 0 12px;font-family:${SANS};font-size:13px;line-height:1.6;color:${MUTED};">Handmade, hand painted ceramics from St. Marys, Georgia.<br>${footerLink(`${siteUrl}/shop`, "Shop")} &nbsp;&middot;&nbsp; ${footerLink(`${siteUrl}/care`, "Care guide")} &nbsp;&middot;&nbsp; ${footerLink(`${siteUrl}/contact`, "Contact")}</p>
+<p style="margin:0 0 12px;font-family:${SANS};font-size:13px;line-height:1.6;color:${MUTED};">Handmade, hand painted ceramics from St. Marys, Georgia.<br>${footerLink(`${siteUrl}/shop`, "Shop")} &nbsp;&middot;&nbsp; ${footerLink(`${siteUrl}/returns`, "Shipping & Returns")} &nbsp;&middot;&nbsp; ${footerLink(`${siteUrl}/care`, "Care guide")} &nbsp;&middot;&nbsp; ${footerLink(`${siteUrl}/contact`, "Contact")}</p>
 <p style="margin:0;font-family:${SANS};font-size:12px;line-height:1.6;color:${MUTED};">${footerNote}${unsubscribeUrl ? ` ${footerLink(unsubscribeUrl, "Unsubscribe")}.` : ""}</p>
 </td></tr>
 <tr><td style="height:28px;font-size:0;line-height:0;">&nbsp;</td></tr>
@@ -334,7 +334,7 @@ export function orderShipped(order: OrderData): Email {
     subheading("In this shipment"),
     orderTable(order, false),
     panel("Shipping to", (order.addressLines ?? []).map(esc).join("<br>")),
-    p(`Handmade ceramics are sturdy but not indestructible. Please unpack carefully, and if anything arrives less than perfect, reply to this email with a photo and I will make it right.`),
+    p(`Handmade ceramics are sturdy but not indestructible. Please unpack carefully and keep the boxes until you have checked everything. If anything arrives damaged, reply to this email within 7 days and I will make it right. ${link(`${order.siteUrl}/returns#damage`, "Here is what I will need")}.`),
     signOff,
   ].join("\n");
   return {
@@ -357,7 +357,7 @@ export function orderShipped(order: OrderData): Email {
       "",
       `Shipping to:\n${(order.addressLines ?? []).join("\n")}`,
       "",
-      "Please unpack carefully. If anything arrives less than perfect, reply to this email with a photo and I will make it right.",
+      `Please unpack carefully and keep the boxes until you have checked everything. If anything arrives damaged, reply to this email within 7 days and I will make it right. What I will need: ${order.siteUrl}/returns#damage`,
       "",
       signOffText,
     ].join("\n"),
@@ -446,7 +446,7 @@ export function orderDelivered(order: OrderData): Email {
     p(esc(opening)),
     p(`A little care keeps hand painted ceramics bright for decades. My care guide covers washing, everyday use, and looking after pieces that live outdoors.`),
     button(careUrl, "Read the care guide"),
-    p(`If anything is not right, reply to this email with a photo and I will sort it out.`),
+    p(`If anything arrived damaged, reply to this email within 7 days of delivery and I will sort it out. The ${link(`${order.siteUrl}/returns`, "Shipping & Returns page")} explains what to send, and how returns work.`),
     p(`Thank you for supporting handmade work.`),
     signOff,
   ].join("\n");
@@ -466,7 +466,7 @@ export function orderDelivered(order: OrderData): Email {
       "A little care keeps hand painted ceramics bright for decades. My care guide covers washing, everyday use, and looking after pieces that live outdoors:",
       careUrl,
       "",
-      "If anything is not right, reply to this email with a photo and I will sort it out.",
+      `If anything arrived damaged, reply to this email within 7 days of delivery and I will sort it out. What to send, and how returns work: ${order.siteUrl}/returns`,
       "",
       "Thank you for supporting handmade work.",
       "",
@@ -786,6 +786,244 @@ export function resetCode(data: { siteUrl: string; code: string }): Email {
       `Your password reset code is ${data.code}`,
       "",
       "It expires shortly. If you did not ask for this, you can ignore it.",
+    ].join("\n"),
+  };
+}
+
+// ---------- Custom orders: quote, deposit, final invoice ----------
+
+export type CustomInvoiceData = {
+  siteUrl: string;
+  /** The customer's link to the invoice page, where they pay. */
+  invoiceUrl: string;
+  number: string;
+  name: string;
+  email: string;
+  title: string;
+  items: { description: string; amountCents: number }[];
+  subtotalCents: number;
+  shippingCents: number;
+  /** True while shipping has not been quoted yet. */
+  shippingPending: boolean;
+  pickup: boolean;
+  totalCents: number;
+  depositCents: number;
+  balanceCents: number;
+  depositPaid: boolean;
+  customerNote: string;
+};
+
+/** The itemised sum, ending on whichever line `due` names. */
+function customInvoiceTable(data: CustomInvoiceData, due: "deposit" | "balance" | "none"): string {
+  const cell = (strong: boolean) =>
+    `padding:${strong ? "12px 0 0" : "8px 0"};font-family:${SANS};font-size:${strong ? "17px" : "15px"};line-height:1.5;color:${INK};${strong ? "font-weight:600;" : `border-bottom:1px solid ${RULE};`}`;
+  const row = (label: string, value: string, strong = false, muted = false) =>
+    `<tr><td style="${cell(strong)}${muted ? `color:${MUTED};` : ""}">${label}</td><td align="right" style="${cell(strong)}white-space:nowrap;${muted ? `color:${MUTED};` : ""}">${value}</td></tr>`;
+  const shipping = data.pickup
+    ? row("Local pickup", "Free", false, true)
+    : data.shippingPending
+      ? row("Shipping", "Quoted when your piece is ready", false, true)
+      : row("Shipping", money(data.shippingCents), false, true);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;border-top:1px solid ${RULE};">${data.items
+    .map((item) => row(esc(item.description), money(item.amountCents)))
+    .join("")}${shipping}${row(data.shippingPending ? "Total before shipping" : "Total", money(data.totalCents), false, true)}${
+    data.depositPaid ? row("Deposit paid", `&minus;${money(data.depositCents)}`, false, true) : ""
+  }${
+    due === "deposit"
+      ? row("Deposit due now", money(data.depositCents), true)
+      : due === "balance"
+        ? row("Balance due", money(data.balanceCents), true)
+        : ""
+  }</table>`;
+}
+
+function customInvoiceText(data: CustomInvoiceData, due: "deposit" | "balance" | "none"): string {
+  return [
+    ...data.items.map((item) => `  - ${item.description}: ${money(item.amountCents)}`),
+    data.pickup
+      ? "  Local pickup: free"
+      : data.shippingPending
+        ? "  Shipping: quoted when your piece is ready"
+        : `  Shipping: ${money(data.shippingCents)}`,
+    `${data.shippingPending ? "Total before shipping" : "Total"}: ${money(data.totalCents)}`,
+    data.depositPaid ? `Deposit paid: -${money(data.depositCents)}` : null,
+    due === "deposit" ? `Deposit due now: ${money(data.depositCents)}` : null,
+    due === "balance" ? `Balance due: ${money(data.balanceCents)}` : null,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+}
+
+const CUSTOM_NOTE = "You are receiving this email because you asked GPM Ceramics about a custom piece.";
+
+/** The quote, with the deposit that starts the work. */
+export function customDepositInvoice(data: CustomInvoiceData): Email {
+  const later = data.pickup
+    ? `The balance of ${money(data.balanceCents)} is due when your piece is finished, before you collect it.`
+    : data.shippingPending
+      ? `The balance of ${money(data.balanceCents)}, plus shipping, is due when your piece is finished and before it ships. I will send the shipping cost with that final invoice.`
+      : `The balance of ${money(data.balanceCents)}, which includes shipping, is due when your piece is finished and before it ships.`;
+  const note = data.customerNote.trim();
+  const body = [
+    heading(`Your quote for ${data.title}`),
+    p(`Hi ${esc(firstName(data.name))},`),
+    p(`Thank you for commissioning a piece. Here is the quote we discussed. To get started I ask for a deposit of <strong>${money(data.depositCents)}</strong>; I will begin work as soon as it arrives.`),
+    p(esc(later)),
+    subheading(`Order ${data.number}`),
+    customInvoiceTable(data, "deposit"),
+    note ? panel("A note from me", esc(note).replace(/\n/g, "<br>")) : "",
+    button(data.invoiceUrl, "View invoice and pay deposit"),
+    small(`The link above always shows the latest version of your invoice. Any questions, just reply to this email.`),
+    signOff,
+  ].join("\n");
+  return {
+    subject: `Your quote for ${data.title} — deposit ${money(data.depositCents)}`,
+    html: layout({
+      siteUrl: data.siteUrl,
+      preheader: `Deposit of ${money(data.depositCents)} to get started.`,
+      body,
+      footerNote: CUSTOM_NOTE,
+    }),
+    text: [
+      `Hi ${firstName(data.name)},`,
+      "",
+      `Thank you for commissioning a piece. Here is the quote we discussed. To get started I ask for a deposit of ${money(data.depositCents)}; I will begin work as soon as it arrives.`,
+      later,
+      "",
+      `Order ${data.number}: ${data.title}`,
+      customInvoiceText(data, "deposit"),
+      note ? `\n${note}` : null,
+      "",
+      `View the invoice and pay the deposit: ${data.invoiceUrl}`,
+      "",
+      signOffText,
+    ]
+      .filter((line) => line !== null)
+      .join("\n"),
+  };
+}
+
+/** The piece is finished: the balance and shipping, due before it is released. */
+export function customFinalInvoice(data: CustomInvoiceData): Email {
+  const release = data.pickup
+    ? "Once it is paid I will be in touch to arrange a time for you to collect it."
+    : "Once it is paid I will pack it by hand and send you the tracking details.";
+  const note = data.customerNote.trim();
+  const body = [
+    heading("Your piece is ready"),
+    p(`Hi ${esc(firstName(data.name))},`),
+    p(`${esc(data.title)} is finished. Here is the final invoice for the balance${data.pickup ? "" : " and shipping"}.`),
+    p(esc(release)),
+    subheading(`Order ${data.number}`),
+    customInvoiceTable(data, "balance"),
+    note ? panel("A note from me", esc(note).replace(/\n/g, "<br>")) : "",
+    button(data.invoiceUrl, "View invoice and pay"),
+    small(`Any questions, just reply to this email.`),
+    signOff,
+  ].join("\n");
+  return {
+    subject: `${data.title} is ready — balance ${money(data.balanceCents)}`,
+    html: layout({
+      siteUrl: data.siteUrl,
+      preheader: `Final invoice: ${money(data.balanceCents)} due before it ${data.pickup ? "is collected" : "ships"}.`,
+      body,
+      footerNote: CUSTOM_NOTE,
+    }),
+    text: [
+      `Hi ${firstName(data.name)},`,
+      "",
+      `${data.title} is finished. Here is the final invoice for the balance${data.pickup ? "" : " and shipping"}.`,
+      release,
+      "",
+      `Order ${data.number}`,
+      customInvoiceText(data, "balance"),
+      note ? `\n${note}` : null,
+      "",
+      `View the invoice and pay: ${data.invoiceUrl}`,
+      "",
+      signOffText,
+    ]
+      .filter((line) => line !== null)
+      .join("\n"),
+  };
+}
+
+/** A receipt for the deposit or the balance. */
+export function customPaymentReceived(data: CustomInvoiceData, stage: "deposit" | "balance"): Email {
+  const deposit = stage === "deposit";
+  const next = deposit
+    ? "I will get started on your piece now, and email you the final invoice when it is finished."
+    : data.pickup
+      ? "Your piece is paid in full. I will be in touch to arrange a time for you to collect it."
+      : "Your piece is paid in full. I will pack it by hand and email you the tracking details when it ships.";
+  const body = [
+    heading(deposit ? "Deposit received, thank you" : "Paid in full, thank you"),
+    p(`Hi ${esc(firstName(data.name))},`),
+    p(`I have received your ${deposit ? `deposit of <strong>${money(data.depositCents)}</strong>` : `final payment of <strong>${money(data.balanceCents)}</strong>`} for ${esc(data.title)}.`),
+    p(esc(next)),
+    subheading(`Order ${data.number}`),
+    customInvoiceTable(data, "none"),
+    button(data.invoiceUrl, "View your invoice"),
+    signOff,
+  ].join("\n");
+  return {
+    subject: deposit
+      ? `Deposit received for ${data.title}`
+      : `Paid in full: ${data.title}`,
+    html: layout({
+      siteUrl: data.siteUrl,
+      preheader: next,
+      body,
+      footerNote: CUSTOM_NOTE,
+    }),
+    text: [
+      `Hi ${firstName(data.name)},`,
+      "",
+      `I have received your ${deposit ? `deposit of ${money(data.depositCents)}` : `final payment of ${money(data.balanceCents)}`} for ${data.title}.`,
+      next,
+      "",
+      `Order ${data.number}`,
+      customInvoiceText(data, "none"),
+      "",
+      `View your invoice: ${data.invoiceUrl}`,
+      "",
+      signOffText,
+    ].join("\n"),
+  };
+}
+
+/** The owner's notice that a custom order payment landed. */
+export function customPaymentForOwner(data: CustomInvoiceData, stage: "deposit" | "balance"): Email {
+  const deposit = stage === "deposit";
+  const adminUrl = `${data.siteUrl}/admin/custom`;
+  const amount = money(deposit ? data.depositCents : data.balanceCents);
+  const next = deposit
+    ? "The deposit is in, so the work can start. Send the final invoice from the dashboard when the piece is finished."
+    : data.pickup
+      ? "It is paid in full. Mark it ready for pickup in the dashboard when it is."
+      : "It is paid in full. Mark it shipped in the dashboard once it is on its way.";
+  const body = [
+    heading(deposit ? `Deposit paid: ${data.number}` : `Paid in full: ${data.number}`),
+    p(`<strong>${esc(data.name)}</strong> (${link(`mailto:${data.email}`, data.email)}) paid <strong>${amount}</strong> for ${esc(data.title)}.`),
+    p(esc(next)),
+    customInvoiceTable(data, "none"),
+    button(adminUrl, "Open custom orders"),
+  ].join("\n");
+  return {
+    subject: `${deposit ? "Deposit paid" : "Paid in full"}: ${data.title} — ${amount}`,
+    html: layout({
+      siteUrl: data.siteUrl,
+      preheader: `${data.name} paid ${amount}.`,
+      body,
+      footerNote: "Sent to the shop owner whenever a custom order payment is received.",
+    }),
+    text: [
+      `${data.name} <${data.email}> paid ${amount} for ${data.title} (${data.number}).`,
+      next,
+      "",
+      customInvoiceText(data, "none"),
+      "",
+      `Open custom orders: ${adminUrl}`,
     ].join("\n"),
   };
 }

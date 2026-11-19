@@ -167,8 +167,75 @@ const sections: Section[] = [
         ],
       },
       {
+        kind: "points",
+        title: "The returns policy customers see",
+        items: [
+          <>It is on the {go("/returns", "Shipping & Returns")} page, linked from the footer, the cart, every piece and the FAQ.</>,
+          <>Returns within 14 days of delivery. The buyer pays return shipping. A restocking fee of 15%, minimum $15, comes off the refund. The Return option fills that fee in for you.</>,
+          <>Commissions and made-to-order pieces cannot be returned.</>,
+          <>Damage in transit: reported within 7 days, with four photos. Replace it or refund in full, and file the insurance claim.</>,
+        ],
+      },
+      {
         kind: "note",
-        text: "A refund cannot be undone, and Stripe keeps its processing fee. Damage claims and address problems are handled by replying to the buyer directly.",
+        text: "A refund cannot be undone, and Stripe keeps its processing fee.",
+      },
+    ],
+  },
+  {
+    id: "custom",
+    title: "Custom orders: totems and commissions",
+    intro:
+      "For work that is quoted rather than bought from the shop. The customer pays a deposit to start, then the balance and shipping before the piece is released. Each custom order has one invoice link that serves the whole job.",
+    blocks: [
+      {
+        kind: "steps",
+        title: "1. Write the quote",
+        items: [
+          <>Go to {go("/admin/custom", "Custom orders")} and choose {b("New custom order")}, or open an inquiry and choose {b("Start custom order")} to bring the customer&apos;s name and email across.</>,
+          <>Say what is being made, then add a line for each thing you are charging for.</>,
+          <>Leave {b("Shipping")} blank if you do not know it yet, or switch on {b("Local pickup")}.</>,
+          <>Enter the {b("Deposit")}. The 25% and 50% buttons work it out from the items.</>,
+          <>Add a {b("Note to the customer")} for timing or anything you agreed. They see it on the invoice.</>,
+        ],
+      },
+      {
+        kind: "steps",
+        title: "2. Take the deposit",
+        items: [
+          <>Choose {b("Send quote and deposit invoice")}. The customer is emailed the quote with a button to pay the deposit.</>,
+          <>When they pay, the order moves to {b("In progress")} by itself, they get a receipt and you get an email. Start work then.</>,
+        ],
+      },
+      {
+        kind: "steps",
+        title: "3. Take the balance and shipping",
+        items: [
+          <>When the piece is finished, open the order and fill in the {b("Shipping")} cost. You can still change the lines if the job changed.</>,
+          <>Choose {b("Send final invoice")}. The customer is emailed the balance, which includes shipping, and gives their shipping address when they pay.</>,
+          <>Hold the piece until the order shows {b("Paid")}.</>,
+        ],
+      },
+      {
+        kind: "steps",
+        title: "4. Send it",
+        items: [
+          <>Enter the carrier and tracking number and choose {b("Mark shipped")}, or {b("Mark ready for pickup")}. The customer is emailed.</>,
+          <>Choose {b("Mark delivered")} or {b("Mark picked up")} when it is with them. They get the thank-you with the care guide.</>,
+        ],
+      },
+      {
+        kind: "points",
+        items: [
+          <>{b("Paid another way")}: if a deposit or balance is paid by cash, cheque or transfer, use the link under the Next step button to record it.</>,
+          <>{b("The invoice link")}: shown on the order once the quote is sent. Copy it to text or message a customer. It never expires and always shows the latest invoice.</>,
+          <>{b("What locks")}: once the deposit is paid its amount is fixed. Once the balance is paid the invoice cannot change.</>,
+          <>{b("Cancelling")}: stops the link taking payment. It does not return money already paid; refund that in Stripe from the Payments box.</>,
+        ],
+      },
+      {
+        kind: "note",
+        text: "Custom orders are not returnable, and are kept separate from shop orders: they do not appear under Orders or change what is for sale.",
       },
     ],
   },

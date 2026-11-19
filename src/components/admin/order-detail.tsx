@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { longDate, money, orderStatusFor } from "@/lib/admin";
+import { restockingFeeCents, returnsPolicy } from "@/lib/site";
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message
@@ -546,9 +547,11 @@ function RefundPanel({
   const uncharged = order.stripePaymentIntentId === null || order.totalCents === 0;
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<"refund" | "return">("refund");
+  // The policy's fee, ready to accept or change: 15% with a $15 minimum.
+  const policyFee = (restockingFeeCents(remainingCents) / 100).toFixed(2);
   const [amount, setAmount] = useState<string | null>(null);
   const [returnShipping, setReturnShipping] = useState("");
-  const [fee, setFee] = useState("");
+  const [fee, setFee] = useState(policyFee);
   const [restock, setRestock] = useState(true);
 
   const isReturn = kind === "return" && !uncharged;
@@ -574,7 +577,7 @@ function RefundPanel({
     setKind("refund");
     setAmount(null);
     setReturnShipping("");
-    setFee("");
+    setFee(policyFee);
     setRestock(true);
   }
 
@@ -696,6 +699,10 @@ function RefundPanel({
                 value={fee}
                 onChange={(e) => setFee(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Filled in from the policy: {returnsPolicy.restockingPercent}%, minimum{" "}
+                {returnsPolicy.restockingMinimum}. Change it if you agreed something else.
+              </p>
             </div>
           </div>
           <dl className="max-w-sm space-y-1 border-t border-border pt-3 text-sm">

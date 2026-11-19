@@ -76,3 +76,27 @@ export const modeLabel = {
   oneoff: "One of a kind",
   madeToOrder: "Made to order",
 } as const;
+
+export const customOrderStatusMeta: Record<
+  Doc<"customOrders">["status"],
+  { label: string; variant: BadgeVariant }
+> = {
+  draft: { label: "Draft", variant: "muted" },
+  depositDue: { label: "Awaiting deposit", variant: "warning" },
+  inProgress: { label: "In progress", variant: "success" },
+  balanceDue: { label: "Awaiting final payment", variant: "warning" },
+  paid: { label: "Paid — to ship", variant: "warning" },
+  shipped: { label: "Shipped", variant: "success" },
+  delivered: { label: "Delivered", variant: "secondary" },
+  cancelled: { label: "Cancelled", variant: "muted" },
+};
+
+/** The badge for a custom order, with pickup wording where it applies. */
+export function customOrderStatusFor(order: Pick<Doc<"customOrders">, "status" | "pickup">) {
+  const meta = customOrderStatusMeta[order.status];
+  if (!order.pickup) return meta;
+  if (order.status === "paid") return { ...meta, label: "Paid — to prepare" };
+  if (order.status === "shipped") return { ...meta, label: "Ready for pickup" };
+  if (order.status === "delivered") return { ...meta, label: "Picked up" };
+  return meta;
+}

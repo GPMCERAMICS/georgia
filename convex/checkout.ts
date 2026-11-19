@@ -104,6 +104,13 @@ export const start = action({
         // and any follow-up all use the address given in the cart.
         customer_email: reserved.email ?? undefined,
         automatic_tax: { enabled: reserved.taxEnabled },
+        // Shown under the Pay button, so the buyer has seen the returns
+        // terms before paying. Plain text: this field is not rendered as HTML.
+        custom_text: {
+          submit: {
+            message: `Returns within 14 days of delivery; return shipping and a 15% restocking fee (minimum $15) are taken off the refund. Commissions and made-to-order pieces cannot be returned. Full policy: ${base.replace(/^https?:\/\//, "")}/returns`,
+          },
+        },
         // Codes are created and managed in the Stripe dashboard; this shows
         // the "Add promotion code" field on the Stripe checkout page.
         allow_promotion_codes: true,

@@ -53,6 +53,35 @@ export const site = {
   },
 } as const;
 
+/**
+ * The numbers behind the Shipping & Returns policy. The policy page, the
+ * one-line summaries around the site and the dashboard's return refund all
+ * read these, so changing a number here changes it everywhere.
+ */
+export const returnsPolicy = {
+  /** Days after delivery a piece can be sent back. */
+  windowDays: 14,
+  /** Days after delivery to report damage in transit. */
+  damageWindowDays: 7,
+  /** The restocking fee, as a percentage of the piece's price… */
+  restockingPercent: 15,
+  /** …with this floor, in cents. */
+  restockingMinimumCents: 1500,
+  /** The floor as shown to customers. */
+  restockingMinimum: "$15",
+} as const;
+
+/** The restocking fee on a return of pieces that sold for this much. */
+export function restockingFeeCents(priceCents: number): number {
+  return Math.min(
+    priceCents,
+    Math.max(
+      returnsPolicy.restockingMinimumCents,
+      Math.round((priceCents * returnsPolicy.restockingPercent) / 100),
+    ),
+  );
+}
+
 // The commissions section of the homepage and the /commissions page.
 export const commission = {
   eyebrow: "Heirloom & custom",

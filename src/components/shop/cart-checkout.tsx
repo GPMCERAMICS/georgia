@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PlaceholderVessel } from "@/components/site/placeholder-vessel";
 import { availabilityLine, formatPrice, placeholderShape } from "@/lib/shop";
+import { returnsPolicy } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { useCart } from "./cart-provider";
 import { useCartLines } from "./use-cart-lines";
@@ -347,6 +348,14 @@ export function CartCheckout() {
           </div>
         </dl>
         <p className="mt-2 text-xs text-muted-foreground">Any sales tax is added at checkout.</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          By checking out you agree to the{" "}
+          <Link href="/returns" className="underline underline-offset-2 hover:no-underline">
+            Shipping &amp; Returns policy
+          </Link>
+          : returns within {returnsPolicy.windowDays} days, with a {returnsPolicy.restockingPercent}%
+          restocking fee.
+        </p>
 
         <Button
           size="lg"

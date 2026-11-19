@@ -5,7 +5,7 @@ import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { adminEmails } from "./lib/adminEmails";
 import * as templates from "./lib/emailTemplates";
-import type { Email, InquiryData, OrderData } from "./lib/emailTemplates";
+import type { CustomInvoiceData, Email, InquiryData, OrderData } from "./lib/emailTemplates";
 import { itemsForOrder } from "./orders";
 import { returnDeductions } from "./schema";
 import { getSettings } from "./settings";
@@ -394,6 +394,140 @@ export const newsletterWelcome = internalAction({
       }),
       { to: [args.email] },
     );
+    return null;
+  },
+});
+
+// ---------- custom orders ----------
+
+type CustomContext = NonNullable<
+  Awaited<ReturnType<typeof loadCustomContext>>
+>;
+
+async function loadCustomContext(ctx: ActionCtx, id: Id<"customOrders">) {
+  const found = await ctx.runQuery(internal.customOrders.emailContext, { id });
+  if (!found) return null;
+  const base = siteUrl();
+  const { order, totals } = found;
+  const data: CustomInvoiceData = {
+    siteUrl: base,
+    invoiceUrl: `${base}/invoice/${order.token}`,
+    number: order.number,
+    name: order.name,
+    email: order.email,
+    title: order.title,
+    items: order.items,
+    subtotalCents: totals.subtotalCents,
+    shippingCents: totals.shippingCents,
+    shippingPending: totals.shippingPending,
+    pickup: order.pickup,
+    totalCents: totals.totalCents,
+    depositCents: totals.depositCents,
+    balanceCents: totals.balanceCents,
+    depositPaid: order.depositPaidAt !== null,
+    customerNote: order.customerNote,
+  };
+  let owners: string[] = [];
+  if (found.notifyEmail !== "") owners = [found.notifyEmail];
+  else {
+    try {
+      owners = adminEmails();
+    } catch {
+      owners = [];
+    }
+  }
+  return { ...found, data, owners };
+}
+
+/** The same shape the shop's order emails use, for shipped and delivered. */
+function customAsOrder(context: CustomContext): OrderData {
+  const { order, totals, data } = context;
+  const address = order.shippingAddress;
+  return {
+    siteUrl: data.siteUrl,
+    orderNumber: order.number,
+    name: order.name,
+    email: order.email,
+    items: order.items.map((item) => ({
+      title: item.description,
+      priceCents: item.amountCents,
+      imageUrl: null,
+      note: null,
+    })),
+    subtotalCents: totals.subtotalCents,
+    discountCents: 0,
+    shippingCents: totals.shippingCents,
+    taxCents: 0,
+    totalCents: totals.totalCents,
+    shippingMethod: order.pickup ? "pickup" : "ship",
+    addressLines:
+      order.pickup || !address
+        ? null
+        : [
+            order.name,
+            address.line1,
+            address.line2 ?? "",
+            `${address.city}, ${address.state} ${address.postalCode}`,
+          ].filter(Boolean),
+    pickupLabel: context.pickupLabel,
+    pickupInstructions: context.pickupInstructions,
+    carrier: order.carrier,
+    trackingNumber: order.trackingNumber,
+  };
+}
+
+/** The quote with its deposit, or the final invoice, to the customer. */
+export const customOrderInvoice = internalAction({
+  args: { id: v.id("customOrders"), stage: v.union(v.literal("deposit"), v.literal("balance")) },
+  handler: async (ctx, args) => {
+    const context = await loadCustomContext(ctx, args.id);
+    if (!context) return null;
+    const email =
+      args.stage === "deposit"
+        ? templates.customDepositInvoice(context.data)
+        : templates.customFinalInvoice(context.data);
+    await deliver(email, { to: [context.order.email], copyOwners: context.owners });
+    return null;
+  },
+});
+
+/** A payment landed: a receipt to the customer and a notice to the owner. */
+export const customOrderPaid = internalAction({
+  args: { id: v.id("customOrders"), stage: v.union(v.literal("deposit"), v.literal("balance")) },
+  handler: async (ctx, args) => {
+    const context = await loadCustomContext(ctx, args.id);
+    if (!context) return null;
+    try {
+      await deliver(templates.customPaymentReceived(context.data, args.stage), {
+        to: [context.order.email],
+      });
+    } catch (error) {
+      console.error("custom order receipt failed:", error);
+    }
+    if (context.owners.length > 0) {
+      await deliver(templates.customPaymentForOwner(context.data, args.stage), {
+        to: context.owners,
+        replyTo: context.order.email,
+      });
+    }
+    return null;
+  },
+});
+
+/** Shipped, ready for pickup, or delivered: the shop's usual emails. */
+export const customOrderUpdate = internalAction({
+  args: { id: v.id("customOrders"), event: v.union(v.literal("shipped"), v.literal("delivered")) },
+  handler: async (ctx, args) => {
+    const context = await loadCustomContext(ctx, args.id);
+    if (!context) return null;
+    const order = customAsOrder(context);
+    const email =
+      args.event === "delivered"
+        ? templates.orderDelivered(order)
+        : context.order.pickup
+          ? templates.pickupReady(order)
+          : templates.orderShipped(order);
+    await deliver(email, { to: [context.order.email], copyOwners: context.owners });
     return null;
   },
 });

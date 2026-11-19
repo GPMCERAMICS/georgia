@@ -4,7 +4,7 @@
  * templates are the real ones.
  */
 import * as templates from "./emailTemplates";
-import type { Email, InquiryData, OrderData } from "./emailTemplates";
+import type { CustomInvoiceData, Email, InquiryData, OrderData } from "./emailTemplates";
 
 export type Sample = {
   id: string;
@@ -85,6 +85,37 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
     message:
       "We are celebrating my parents' 40th anniversary in June and would love a platter with their names, the date, and the house they have lived in since 1986. Is that something you could do in time?",
     pieceTitle: "Anniversary Portrait Platter",
+  };
+
+  const customQuote: CustomInvoiceData = {
+    siteUrl,
+    invoiceUrl: `${siteUrl}/invoice/sample`,
+    number: "GP-1050",
+    name: "Jordan Ellis",
+    email: "jordan@example.com",
+    title: "Garden totem, five pieces",
+    items: [
+      { description: "Garden totem, five hand painted pieces", amountCents: 45000 },
+      { description: "Steel base and rod", amountCents: 5000 },
+    ],
+    subtotalCents: 50000,
+    shippingCents: 0,
+    shippingPending: true,
+    pickup: false,
+    totalCents: 50000,
+    depositCents: 20000,
+    balanceCents: 30000,
+    depositPaid: false,
+    customerNote: "I expect to have it finished in about six weeks.",
+  };
+  const customFinal: CustomInvoiceData = {
+    ...customQuote,
+    shippingCents: 6500,
+    shippingPending: false,
+    totalCents: 56500,
+    balanceCents: 36500,
+    depositPaid: true,
+    customerNote: "",
   };
 
   const reminderItems = [{ title: kingfisher.title, priceCents: kingfisher.priceCents, imageUrl: images.plate, slug: "the-kingfisher" }];
@@ -234,6 +265,46 @@ export function sampleEmails(siteUrl: string, images: SampleImages = SITE_SAMPLE
       audience: "Owner",
       isNew: false,
       email: templates.commissionForOwner(inquiry),
+    },
+    {
+      id: "custom-deposit",
+      label: "Custom order — quote and deposit",
+      trigger: "The quote is sent from Custom orders in the dashboard.",
+      audience: "Customer, with a copy to the owner",
+      isNew: true,
+      email: templates.customDepositInvoice(customQuote),
+    },
+    {
+      id: "custom-deposit-paid",
+      label: "Custom order — deposit received",
+      trigger: "The customer pays the deposit from their invoice page.",
+      audience: "Customer",
+      isNew: true,
+      email: templates.customPaymentReceived({ ...customQuote, depositPaid: true }, "deposit"),
+    },
+    {
+      id: "custom-final",
+      label: "Custom order — final invoice",
+      trigger: "The final invoice is sent once the piece is finished and shipping is quoted.",
+      audience: "Customer, with a copy to the owner",
+      isNew: true,
+      email: templates.customFinalInvoice(customFinal),
+    },
+    {
+      id: "custom-paid",
+      label: "Custom order — paid in full",
+      trigger: "The customer pays the balance and shipping.",
+      audience: "Customer",
+      isNew: true,
+      email: templates.customPaymentReceived(customFinal, "balance"),
+    },
+    {
+      id: "owner-custom-paid",
+      label: "Custom order payment",
+      trigger: "A custom order's deposit or balance is paid.",
+      audience: "Owner",
+      isNew: true,
+      email: templates.customPaymentForOwner({ ...customQuote, depositPaid: true }, "deposit"),
     },
     {
       id: "newsletter-welcome",

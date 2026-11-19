@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
-import { site } from "@/lib/site";
+import { returnsPolicy, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 // PLACEHOLDER answers — believable defaults for a handmade ceramics studio,
 // to be replaced with Georgia's real numbers and policies.
-const faqs = [
+const faqs: { question: string; answer: string; more?: { href: string; label: string } }[] = [
   {
     question: "How long does a custom commission take?",
     answer:
@@ -31,6 +31,7 @@ const faqs = [
       "lower 48 states and DC). I pack everything by hand with generous " +
       "padding. Local pickup is also available — choose it at checkout and " +
       "I'll email you to arrange a time.",
+    more: { href: "/returns", label: "More about shipping" },
   },
   {
     question: "Are the pieces food safe?",
@@ -51,10 +52,12 @@ const faqs = [
   {
     question: "Can I return or exchange a piece?",
     answer:
-      "If a piece arrives damaged, send me a photo within 48 hours and I will " +
-      "replace it or refund you in full. Because commissions are made just for you, " +
-      "they aren't returnable — but I share progress along the way so " +
-      "the finished piece is never a surprise.",
+      `Yes. Pieces can be returned within ${returnsPolicy.windowDays} days of delivery; ` +
+      `return shipping is at your cost and a ${returnsPolicy.restockingPercent}% restocking fee ` +
+      `(minimum ${returnsPolicy.restockingMinimum}) is taken off the refund. Commissions and ` +
+      "made-to-order pieces can't be returned. If a piece arrives damaged, tell me within " +
+      `${returnsPolicy.damageWindowDays} days and I will replace it or refund you in full.`,
+    more: { href: "/returns", label: "Read the full Shipping & Returns policy" },
   },
   {
     question: "Do you take wholesale or bulk orders?",
@@ -102,6 +105,15 @@ export default function FaqPage() {
               </summary>
               <p className="pb-6 text-lg leading-relaxed">
                 {faq.answer}
+                {faq.more && (
+                  <>
+                    {" "}
+                    <Link href={faq.more.href} className="underline underline-offset-4 hover:no-underline">
+                      {faq.more.label}
+                    </Link>
+                    .
+                  </>
+                )}
               </p>
             </details>
           ))}

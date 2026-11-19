@@ -6,6 +6,7 @@ const SITE_MAP = [
   { href: "/shop", label: "Shop" },
   { href: "/commissions", label: "Commissions" },
   { href: "/contact", label: "About" },
+  { href: "/returns", label: "Shipping & Returns" },
   { href: "/care", label: "Care guide" },
   { href: "/faq", label: "FAQ" },
 ];

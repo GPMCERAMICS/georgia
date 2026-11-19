@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BannerStatement, PageBanner } from "@/components/site/page-banner";
 import { SiteFooter } from "@/components/site/site-footer";
-import { site } from "@/lib/site";
+import { returnsPolicy, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Care guide",
@@ -51,7 +51,7 @@ const sections = [
     heading: "Chips, cracks and accidents",
     points: [
       "A small chip on a decorative piece can often be touched up. A cracked piece should be retired from food use.",
-      "If something arrives damaged, email a photo within 48 hours and it will be replaced or refunded.",
+      `If something arrives damaged, tell me within ${returnsPolicy.damageWindowDays} days of delivery and it will be replaced or refunded. The Shipping & Returns page lists what to send.`,
     ],
   },
 ];

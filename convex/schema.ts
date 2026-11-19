@@ -65,6 +65,34 @@ export const shipTo = v.object({
   postalCode: v.string(),
 });
 
+/**
+ * Where a custom order is in its life:
+ *   draft        being written up; the customer has seen nothing
+ *   depositDue   quote sent, waiting for the deposit
+ *   inProgress   deposit paid, the piece is being made
+ *   balanceDue   final invoice sent, waiting for the balance and shipping
+ *   paid         paid in full, ready to ship or collect
+ *   shipped      on its way, or ready for pickup
+ *   delivered    done
+ *   cancelled    called off
+ */
+export const customOrderStatus = v.union(
+  v.literal("draft"),
+  v.literal("depositDue"),
+  v.literal("inProgress"),
+  v.literal("balanceDue"),
+  v.literal("paid"),
+  v.literal("shipped"),
+  v.literal("delivered"),
+  v.literal("cancelled"),
+);
+
+/** One line on a custom order's invoice. */
+export const customOrderLine = v.object({
+  description: v.string(),
+  amountCents: v.number(),
+});
+
 /** What a return keeps back from the refund. */
 export const returnDeductions = v.object({
   returnShippingCents: v.number(),
@@ -217,6 +245,50 @@ export default defineSchema({
     .index("by_pieceId", ["pieceId"]),
 
   settings: defineTable(settingsFields),
+
+  /**
+   * Commissions and other made-for-you work, sold by invoice rather than
+   * through the cart: a quote with line items, a deposit up front, then the
+   * balance and shipping before the piece is released.
+   */
+  customOrders: defineTable({
+    // Shares the shop's order-number sequence, so every invoice is unique.
+    number: v.string(),
+    // What the customer's invoice link carries. Nobody signs in to pay.
+    token: v.string(),
+    status: customOrderStatus,
+    inquiryId: v.union(v.id("inquiries"), v.null()),
+    name: v.string(),
+    email: v.string(),
+    // What is being made, e.g. "Garden totem, five pieces".
+    title: v.string(),
+    // A short invoice has a handful of lines; capped in the mutations.
+    items: v.array(customOrderLine),
+    // null until shipping has been quoted (often only once it is made).
+    shippingCents: v.union(v.number(), v.null()),
+    // Collected in person: no shipping line and no address.
+    pickup: v.boolean(),
+    depositCents: v.number(),
+    // Shown to the customer on the invoice: timing, terms, anything agreed.
+    customerNote: v.string(),
+    // Private to the dashboard.
+    notes: v.string(),
+    depositPaidAt: v.union(v.number(), v.null()),
+    balancePaidAt: v.union(v.number(), v.null()),
+    // What was actually taken at each stage (tax can make it differ).
+    depositPaidCents: v.union(v.number(), v.null()),
+    balancePaidCents: v.union(v.number(), v.null()),
+    depositPaymentIntentId: v.union(v.string(), v.null()),
+    balancePaymentIntentId: v.union(v.string(), v.null()),
+    shippingAddress: v.union(shippingAddress, v.null()),
+    shippedAt: v.union(v.number(), v.null()),
+    deliveredAt: v.union(v.number(), v.null()),
+    carrier: v.union(v.string(), v.null()),
+    trackingNumber: v.union(v.string(), v.null()),
+  })
+    .index("by_token", ["token"])
+    .index("by_status", ["status"])
+    .index("by_inquiryId", ["inquiryId"]),
 
   /**
    * One row per email address we may write to beyond a single order: the

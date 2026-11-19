@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import {
   BookOpen,
   ExternalLink,
+  FileText,
   Inbox,
   LayoutDashboard,
   LogOut,
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/custom", label: "Custom orders", icon: FileText },
   { href: "/admin/pieces", label: "Pieces", icon: Package },
   { href: "/admin/tags", label: "Tags", icon: Tags },
   { href: "/admin/inquiries", label: "Inquiries", icon: Inbox },
